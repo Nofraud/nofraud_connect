@@ -70,10 +70,10 @@ class OrderFraudStatus
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
                     $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
 
-	            $order->save();
+                    $order->save();
 
-                    if ($this->configHelper->getAutoCancel($storeId) && isset($resultMap['http']['response']['body']['decision'])) {
-                        $this->orderProcessor->handleAutoCancel($order, $resultMap['http']['response']['body']['decision']);
+                    if ($this->configHelper->getAutoCancel($storeId) && isset($response['http']['response']['body']['decision'])) {
+                        $this->orderProcessor->handleAutoCancel($order, $response['http']['response']['body']['decision']);
                     }
                 }
             } catch (\Exception $exception) {
