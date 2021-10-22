@@ -112,27 +112,27 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
                 $order->addStatusHistoryComment($comment);
             }
 
-            // For official results from from NoFraud, update the order status
-            // according to admin config preferences
-            if (isset($resultMap['http']['response']['body'])) {
-                $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-            }
-
-            // Update state and status
-            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
-
             // Order has been screened
             $order->setNofraudScreened(true);
             $order->setNofraudStatus($data['status']);
             $order->setNofraudTransactionId($data['id']);
 
-            // Finally, save order
-            $order->save();
-
             // If auto-cancel is enabled, try to refund order if order failed NoFraud check
             if ($this->configHelper->getAutoCancel($storeId) && isset($resultMap['http']['response']['body']['decision'])) {
                 $this->orderProcessor->handleAutoCancel($order, $resultMap['http']['response']['body']['decision']);
+            } else{
+                // For official results from from NoFraud, update the order status
+                // according to admin config preferences
+                if (isset($resultMap['http']['response']['body'])) {
+                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                    // Update state and status
+                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
+                }
             }
+
+            // Finally, save order
+            $order->save();
+
 
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);

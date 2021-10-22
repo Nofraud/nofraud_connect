@@ -67,14 +67,14 @@ class OrderFraudStatus
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
 
                 if (isset($response['http']['response']['body'])) {
-                    $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
-
-                    $order->save();
-
                     if ($this->configHelper->getAutoCancel($storeId) && isset($response['http']['response']['body']['decision'])) {
                         $this->orderProcessor->handleAutoCancel($order, $response['http']['response']['body']['decision']);
+                        return;
                     }
+
+                    $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
+                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
+                    $order->save();
                 }
             } catch (\Exception $exception) {
                 $this->logger->logFailure($order, $exception);

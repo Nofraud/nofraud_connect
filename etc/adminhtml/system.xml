@@ -46,6 +46,15 @@
                     <comment>While enabled, all failed orders will automatically be cancelled.</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="refund_online" translate="label" type="select"
+                       sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Refund Online Payment Methods</label>
+                    <comment>While enabled, module will attempt to refund online payment methods.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <depends>
+                        <field id="nofraud_connect/general/auto_cancel">1</field>
+                    </depends>
+                </field>
             </group>
             <group id="order_statuses" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Order Statuses</label>

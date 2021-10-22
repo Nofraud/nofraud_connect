@@ -15,6 +15,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     const GENERAL_SCREENED_ORDER_STATUS = self::GENERAL . '/screened_order_status';
     const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
     const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
+    const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
 
     protected $logger;
 
@@ -35,65 +36,42 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getEnabled($storeId = null)
     {
-        if (is_null($storeId)) {
-            return $this->scopeConfig->getValue(self::GENERAL_ENABLED);
-        } else {
-            return $this->scopeConfig->getValue(self::GENERAL_ENABLED, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::GENERAL_ENABLED, $storeId);
     }
 
     public function getApiToken($storeId = null)
     {
-        if (is_null($storeId)) {
-            return $this->scopeConfig->getValue(self::GENERAL_API_TOKEN);
-        } else {
-            return $this->scopeConfig->getValue(self::GENERAL_API_TOKEN, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::GENERAL_API_TOKEN, $storeId);
     }
 
     public function getSandboxMode($storeId = null)
     {
-        if (is_null($storeId)) {
-            return $this->scopeConfig->getValue(self::GENERAL_SANDBOX_MODE);
-        } else {
-            return $this->scopeConfig->getValue(self::GENERAL_SANDBOX_MODE, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::GENERAL_SANDBOX_MODE, $storeId);
     }
 
     public function getScreenedOrderStatus($storeId = null)
     {
-        if (is_null($storeId)) {
-             return $this->scopeConfig->getValue(self::GENERAL_SCREENED_ORDER_STATUS);
-        } else {
-            return $this->scopeConfig->getValue(self::GENERAL_SCREENED_ORDER_STATUS, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::GENERAL_SCREENED_ORDER_STATUS, $storeId);
     }
 
     public function getAutoCancel($storeId = null)
     {
-        if (is_null($storeId)) {
-            return $this->scopeConfig->getValue(self::GENERAL_AUTO_CANCEL);
-        } else {
-            return $this->scopeConfig->getValue(self::GENERAL_AUTO_CANCEL, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::GENERAL_AUTO_CANCEL, $storeId);
+    }
+
+    public function getRefundOnline($storeId = null)
+    {
+        return $this->_getConfigValueByStoreId(self::GENERAL_REFUND_ONLINE, $storeId);
     }
 
     public function getOrderStatusPass($storeId = null)
     {
-        if (is_null($storeId)) {
-            return $this->scopeConfig->getValue(self::ORDER_STATUSES_PASS);
-        } else {
-            return $this->scopeConfig->getValue(self::ORDER_STATUSES_PASS, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::ORDER_STATUSES_PASS, $storeId);
     }
 
     public function getOrderStatusReview($storeId = null)
     {
-        if (is_null($storeId)) {
-            return $this->scopeConfig->getValue(self::ORDER_STATUSES_REVIEW);
-        } else {
-            return $this->scopeConfig->getValue(self::ORDER_STATUSES_REVIEW, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId(self::ORDER_STATUSES_REVIEW, $storeId);
     }
 
     public function getCustomStatusConfig($statusName, $storeId = null)
@@ -104,20 +82,12 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
         $path = self::ORDER_STATUSES . '/' . $statusName; 
 
-        if (is_null($storeId)) {
-             return $this->scopeConfig->getValue($path);
-        } else {
-             return $this->scopeConfig->getValue($path, 'store', $storeId);
-        }
+        return $this->_getConfigValueByStoreId($path, $storeId);
     }
 
     public function paymentMethodIsIgnored($method, $storeId = null)
     {
-        if (is_null($storeId)) {
-             $methods = $this->scopeConfig->getValue(self::GENERAL_SCREENED_PAYMENT_METHODS);
-        } else {
-             $methods = $this->scopeConfig->getValue(self::GENERAL_SCREENED_PAYMENT_METHODS, 'store', $storeId);
-        }
+        $methods = $this->_getConfigValueByStoreId(self::GENERAL_SCREENED_PAYMENT_METHODS, $storeId);
 
         if (empty($methods)) {
             return false;
@@ -144,5 +114,19 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             return true;
         }
         return false;
+    }
+
+    private function _getConfigValueByStoreId($path, $storeId){
+        if (is_null($storeId)) {
+            return $this->scopeConfig->getValue($path);
+        }
+
+        $value = $this->scopeConfig->getValue($path, 'store', $storeId);
+
+        if(empty($value)){
+            $value = $this->scopeConfig->getValue($path);
+        }
+
+        return $value;
     }
 }

@@ -46,5 +46,10 @@ class Logger extends \Monolog\Logger
         $this->critical( "Encountered an exception while sending an API request. Here is the exception: " );
         $this->critical(print_r($curlError,true));
     }
+
+    public function logRefundException($exception, $orderNumber){
+        $this->critical('We could not process the refund for order number ' . $orderNumber . ' for the following reasons:');
+        $this->critical($exception->getMessage());
+    }
 }
 
