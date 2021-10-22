@@ -11,35 +11,35 @@ class Processor
     protected $configHelper;
     protected $dataHelper;
     protected $orderStatusCollection;
-    protected $invoiceService;
-    protected $creditmemoFactory;
-    protected $creditmemoService;
     protected $stateIndex = [];
     protected $orderManagement;
     protected $orderStatusFactory;
+    protected $storeManager;
+    protected $refundInvoiceInterface;
+    protected $invoiceRepositoryInterface;
 
     const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
 
     public function __construct(
         \NoFraud\Connect\Logger\Logger $logger,
         \NoFraud\Connect\Helper\Data $dataHelper,
-        \Magento\Sales\Model\Service\InvoiceService $invoiceService,
-        \Magento\Sales\Model\Order\CreditmemoFactory $creditmemoFactory,
-        \Magento\Sales\Model\Service\CreditmemoService $creditmemoService,
         \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection,
         \NoFraud\Connect\Helper\Config $configHelper,
         \Magento\Sales\Api\OrderManagementInterface $orderManagement,
-        \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory
+        \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
+        \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface,
+        \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
     ) {
         $this->logger = $logger;
         $this->dataHelper = $dataHelper;
-        $this->invoiceService = $invoiceService;
-        $this->creditmemoFactory = $creditmemoFactory;
-        $this->creditmemoService = $creditmemoService;
         $this->orderStatusCollection = $orderStatusCollection;
         $this->configHelper = $configHelper;
         $this->orderManagement = $orderManagement;
         $this->orderStatusFactory = $orderStatusFactory;
+        $this->storeManager = $storeManager;
+        $this->refundInvoiceInterface = $refundInvoiceInterface;
+        $this->invoiceRepositoryInterface = $invoiceRepositoryInterface;
     }
 
     public function getCustomOrderStatus($response, $storeId = null)
@@ -87,27 +87,17 @@ class Processor
 
     public function handleAutoCancel($order, $decision)
     {
-        // if order failed NoFraud check, try to refund
-        if ($decision == 'fail' && $order->canInvoice()){
+        // if order failed NoFraud check, try to refund and cancel order
+        if ($decision == 'fail'){
+
+            $this->refundOrder($order);
 
             // Handle custom cancel for Payment Method if needed
-            if($this->_runCustomAutoCancel($order)){
-                return;
-            }
-
-            // Run Default refund & cancel logic
-            if($order->getBaseTotalPaid() > 0){
-                $invoice = $this->invoiceService->prepareInvoice($order);
-                $invoice->register();
-                $invoice->save();
-                $creditmemo = $this->creditmemoFactory->createByOrder($order);
-                $creditmemo->setInvoice($invoice);
-                $this->creditmemoService->refund($creditmemo);
-                $order->setStatus(Order::STATE_CANCELED)->setState(Order::STATE_CANCELED);
-            } else{
+            if(!$this->_runCustomAutoCancel($order)){
                 $order->cancel();
+                $order->setState(Order::STATE_CANCELED)->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
+                $order->save();
             }
-
         }
     }
 
@@ -135,5 +125,19 @@ class Processor
         $order->setStatus($status);
 
         $order->save();
+    }
+
+    public function refundOrder($order){
+        $storeId = $this->storeManager->getStore()->getId();
+        $isOffline = $order->getPayment()->getMethodInstance()->isOffline();
+
+        // If payment method is online, attempt online refund if enabled
+        if (!$isOffline && $this->configHelper->getRefundOnline($storeId)) {
+            $invoices = $order->getInvoiceCollection();
+            foreach ($invoices as $invoice){
+                $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
+            }
+        }
+
     }
 }
