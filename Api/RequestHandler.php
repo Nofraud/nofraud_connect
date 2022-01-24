@@ -9,6 +9,9 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 {
     const DEFAULT_AVS_CODE = 'U';
     const DEFAULT_CVV_CODE = 'U';
+    const DEFAULT_LAST_4 = "0000";
+    const DEFAULT_CARD_TYPE = "alt";
+    
     const BRAINTREE_CODE = 'braintree';
     const MAGEDELIGHT_AUTHNET_CIM_METHOD_CODE = 'md_authorizecim';
     const PL_MI_METHOD_CODE = 'nmi_directpost';
@@ -19,6 +22,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     protected $orderCollectionFactory;
 
     protected $ccTypeMap = [
+        '' => self::DEFAULT_CARD_TYPE
         'ae' => 'Amex',
         'americanexpress' => 'Amex',
         'di' => 'Discover',
@@ -168,13 +172,13 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     {
         $cc = [];
 
-        $cc['cardType']       = $this->formatCcType( $payment->getCcType() );
-        $cc['cardNumber']     = $payment->getCcNumber();
-        $cc['expirationDate'] = $this->buildCcExpDate($payment);
-        $cc['cardCode']       = $payment->getCcCid();
+        $cc['cardType']       = $this->formatCcType( $payment->getCcType() ) ?? self::DEFAULT_CARD_TYPE;
+        $cc['cardNumber']     = $payment->getCcNumber() ?? NULL;
+        $cc['expirationDate'] = $this->buildCcExpDate($payment) ?? NULL;
+        $cc['cardCode']       = $payment->getCcCid() ?? NULL;
 
         if ($last4 = $this->decryptLast4($payment)) {
-            $cc['last4'] = $last4;
+            $cc['last4'] = $last4 ?? self::DEFAULT_LAST_4;
         }
 
         $paymentParams = [];
@@ -196,12 +200,16 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         if (strlen($last4) == 4 && ctype_digit($last4)) {
             return $last4;
         }
+
+        if ( strlen($last4) > 4 || empty($last4) ){
+            return self::DEFAULT_LAST_4; //spoof variable so things get filled in.
+        }
     }
 
     protected function formatCcType( $code )
     {
         if ( empty($code) ){
-            return;
+            $code = '',
         }
 
         $codeKey = strtolower($code);
