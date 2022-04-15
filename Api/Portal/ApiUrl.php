@@ -1,7 +1,13 @@
 <?php
  
 namespace NoFraud\Connect\Api\Portal;
- 
+
+use NoFraud\Connect\Helper\Config;
+use NoFraud\Connect\Logger\Logger;
+
+/**
+ * Build Api Url
+ */
 class ApiUrl
 {
     const PORTAL_URL = 'https://portal-api.nofraud.com/';
@@ -10,33 +16,44 @@ class ApiUrl
     protected $configHelper;
     protected $logger;
 
+    /**
+     * @param Config $configHelper
+     * @param Logger $logger
+     */
     public function __construct(
-        \NoFraud\Connect\Helper\Config $configHelper,
-        \NoFraud\Connect\Logger\Logger $logger
+        Config $configHelper,
+        Logger $logger
     ) {
         $this->configHelper = $configHelper;
         $this->logger = $logger;
     }
 
     /**
+     * Build Order Api Url
      * @param string $orderInfoRequest | Info wanted from order e.x. 'status'
      * @param string $apiToken | API Token
      * @return string
      */
-    public function buildOrderApiUrl($orderInfoRequest, $apiToken)
+    public function buildOrderApiUrl(string $orderInfoRequest, $apiToken): string
     {
         $apiBaseUrl = $this->getPortalUrl();
-        $apiUrl = $apiBaseUrl . $orderInfoRequest . '/' . $apiToken;
-
-        return $apiUrl;
+        return $apiBaseUrl . $orderInfoRequest . '/' . $apiToken;
     }
 
-    public function getPortalOrderCancelUrl()
+    /**
+     * Get Cancel url
+     * @return string
+     */
+    public function getPortalOrderCancelUrl(): string
     {
         return $this->getPortalUrl() . self::CANCEL_ORDER_ENDPOINT;
     }
 
-    protected function getPortalUrl()
+    /**
+     * Get portal url
+     * @return string
+     */
+    protected function getPortalUrl(): string
     {
         return self::PORTAL_URL;
     }

@@ -1,0 +1,38 @@
+<script>
+    require(['jquery'], function(jQuery){
+        jQuery("#nf-api-response").click(function(){
+            var api = jQuery('#nofraud_connect_connection_settings_api_endpoint').val();
+            var data = {
+                api_endpoint: api,
+                form_key: FORM_KEY
+            };
+            var url = '<?= $block->escapeUrl($block->getUrl('nofraud/systemconfig/getResponse')); ?>';
+            jQuery.ajax({
+                type: "POST",
+                url: url,
+                data: data,
+                showLoader: true,
+                success: function(response){
+                    var api_result = jQuery('#nf-api-result');
+                    console.log(response);
+                    if(response.error == 1){
+                        api_result.html(response.description);
+                    }else{
+                        api_result.html(response.status);
+                    }
+                    
+                },
+                error: function () {
+                    var result_token = jQuery('#nf-api-result');
+                    result_token.html('Something went wrong. Please, try again.');
+                }
+            });
+        });
+    });
+</script>
+<div class="nf-get-response">
+    <div id="nf-api-result" class="message-validation hide"></div>
+    <button  class="get-auth-token" type="button" id="nf-api-response">
+        <span><?= $block->escapeHtml($block->getButtonLabel()) ?></span>
+    </button>
+</div>

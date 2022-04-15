@@ -1,13 +1,19 @@
 <?php
 namespace NoFraud\Connect\Logger\Handler;
 
-class Info extends \Magento\Framework\Logger\Handler\Base
+use Magento\Framework\Logger\Handler\Base;
+use Monolog\Logger;
+
+/**
+ * Provides logger type and NF log path
+ */
+class Info extends Base
 {
     /**
      * Logging level
      * @var int
      */
-    protected $loggerType = \Monolog\Logger::INFO;
+    protected $loggerType = Logger::INFO;
 
     /**
      * File name

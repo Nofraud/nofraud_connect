@@ -84,6 +84,16 @@
                     <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
                 </field>
             </group>
+            <group id="connection_settings" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Api Settings</label>
+                <field id="api_endpoint" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Endpoint Url</label>
+                </field>
+                <field id="test_connection" translate="button_label" sortOrder="70" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <button_label>Get Response</button_label>
+                    <frontend_model>NoFraud\Connect\Block\Adminhtml\System\Config\GetResponse</frontend_model>
+                </field>
+            </group>
         </section>
     </system>
 </config>

@@ -7,7 +7,7 @@ use Magento\Framework\Data\OptionSourceInterface;
 use Magento\Signifyd\Api\Data\CaseInterface;
 
 /**
- * Class Options
+ * Provides Screened Options
  */
 class Options implements OptionSourceInterface
 {
@@ -26,10 +26,11 @@ class Options implements OptionSourceInterface
         $this->escaper = $escaper;
     }
 
+
     /**
-     * {@inheritdoc}
+     * @return array[]
      */
-    public function toOptionArray()
+    public function toOptionArray(): array
     {
         return [
             [
