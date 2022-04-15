@@ -2,34 +2,76 @@
 
 namespace NoFraud\Connect\Observer;
 
-class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInterface
+use Exception;
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Event\ObserverInterface;
+use Magento\Framework\Registry;
+use Magento\Store\Model\StoreManagerInterface;
+use NoFraud\Connect\Api\ApiUrl;
+use NoFraud\Connect\Api\RequestHandler;
+use NoFraud\Connect\Api\ResponseHandler;
+use NoFraud\Connect\Helper\Config;
+use NoFraud\Connect\Logger\Logger;
+use NoFraud\Connect\Order\Processor;
+use Stripe\PaymentMethod;
+
+/**
+ * Send Order details to the NF server after Order have been placed
+ */
+class SalesOrderPaymentPlaceEnd implements ObserverInterface
 {
+    /**
+     * @var Config
+     */
     protected $configHelper;
+    /**
+     * @var RequestHandler
+     */
     protected $requestHandler;
+    /**
+     * @var ResponseHandler
+     */
     protected $responseHandler;
+    /**
+     * @var Logger
+     */
     protected $logger;
+    /**
+     * @var ApiUrl
+     */
     protected $apiUrl;
+    /**
+     * @var Processor
+     */
     protected $orderProcessor;
-    protected $orderStatusCollection;
+    /**
+     * @var StoreManagerInterface
+     */
     protected $storeManager;
-    protected $invoiceService;
-    protected $creditmemoFactory;
-    protected $creditmemoService;
+    /**
+     * @var Registry
+     */
     protected $_registry;
 
+    /**
+     * @param Config $configHelper
+     * @param RequestHandler $requestHandler
+     * @param ResponseHandler $responseHandler
+     * @param Logger $logger
+     * @param ApiUrl $apiUrl
+     * @param Processor $orderProcessor
+     * @param StoreManagerInterface $storeManager
+     * @param Registry $registry
+     */
     public function __construct(
-        \NoFraud\Connect\Helper\Config $configHelper,
-        \NoFraud\Connect\Api\RequestHandler $requestHandler,
-        \NoFraud\Connect\Api\ResponseHandler $responseHandler,
-        \NoFraud\Connect\Logger\Logger $logger,
-        \NoFraud\Connect\Api\ApiUrl $apiUrl,
-        \NoFraud\Connect\Order\Processor $orderProcessor,
-        \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection,
-        \Magento\Store\Model\StoreManagerInterface $storeManager,
-        \Magento\Sales\Model\Service\InvoiceService $invoiceService,
-        \Magento\Sales\Model\Order\CreditmemoFactory $creditmemoFactory,
-        \Magento\Sales\Model\Service\CreditmemoService $creditmemoService,
-        \Magento\Framework\Registry $registry
+        Config $configHelper,
+        RequestHandler $requestHandler,
+        ResponseHandler $responseHandler,
+        Logger $logger,
+        ApiUrl $apiUrl,
+        Processor $orderProcessor,
+        StoreManagerInterface $storeManager,
+        Registry $registry
     ) {
         $this->configHelper = $configHelper;
         $this->requestHandler = $requestHandler;
@@ -37,15 +79,58 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         $this->logger = $logger;
         $this->apiUrl = $apiUrl;
         $this->orderProcessor = $orderProcessor;
-        $this->orderStatusCollection = $orderStatusCollection;
         $this->storeManager = $storeManager;
-        $this->invoiceService = $invoiceService;
-        $this->creditmemoFactory = $creditmemoFactory;
-        $this->creditmemoService = $creditmemoService;
         $this->_registry = $registry;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * @param $resultMap
+     * @param $order
+     * @param $storeId
+     */
+    private function processOrder($resultMap, $order, $storeId)
+    {
+        try {
+            // Prepare order data from result map
+            $data = $this->responseHandler->getTransactionData($resultMap);
+
+            // For all API responses (official results from NoFraud, client errors, etc.),
+            // add an informative comment to the order in Magento admin
+            $comment = $data['comment'];
+            if (!empty($comment)) {
+                $order->addStatusHistoryComment($comment);
+            }
+
+            // Order has been screened
+            $order->setNofraudScreened(true);
+            $order->setNofraudStatus($data['status']);
+            $order->setNofraudTransactionId($data['id']);
+
+            // If auto-cancel is enabled, try to refund order if order failed NoFraud check
+            if ($this->configHelper->getAutoCancel($storeId) &&
+                isset($resultMap['http']['response']['body']['decision'])) {
+                $this->orderProcessor->handleAutoCancel($order, $resultMap['http']['response']['body']['decision']);
+            } else {
+                // For official results from from NoFraud, update the order status
+                // according to admin config preferences
+                if (isset($resultMap['http']['response']['body'])) {
+                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                    // Update state and status
+                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
+                }
+            }
+
+            // Finally, save order
+            $order->save();
+        } catch (Exception $exception) {
+            $this->logger->logFailure($order, $exception);
+        }
+    }
+
+    /**
+     * @param Observer $observer
+     */
+    public function execute(Observer $observer)
     {
         // If module is disabled in admin config, do nothing
         $storeId = $this->storeManager->getStore()->getId();
@@ -76,7 +161,8 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         // multiple times, but the logic below this point should not be executed
         // We use the registry to keep track of the initial execution of the event
         //
-        if ($this->_registry->registry('afterOrderSaveNoFraudExecuted') && !$payment->getMethodInstance()->isOffline()) {
+        if ($this->_registry->registry('afterOrderSaveNoFraudExecuted') &&
+            !$payment->getMethodInstance()->isOffline()) {
             return;
         }
         // Register afterOrderSaveNoFraudExecuted on the first run to only allow transacions to be screened once
@@ -101,44 +187,13 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         // Log request results with associated invoice number
         $this->logger->logTransactionResults($order, $payment, $resultMap);
 
-        try {
-            // Prepare order data from result map
-            $data = $this->responseHandler->getTransactionData($resultMap);
-
-            // For all API responses (official results from NoFraud, client errors, etc.),
-            // add an informative comment to the order in Magento admin
-            $comment = $data['comment'];
-            if (!empty($comment)) {
-                $order->addStatusHistoryComment($comment);
-            }
-
-            // Order has been screened
-            $order->setNofraudScreened(true);
-            $order->setNofraudStatus($data['status']);
-            $order->setNofraudTransactionId($data['id']);
-
-            // If auto-cancel is enabled, try to refund order if order failed NoFraud check
-            if ($this->configHelper->getAutoCancel($storeId) && isset($resultMap['http']['response']['body']['decision'])) {
-                $this->orderProcessor->handleAutoCancel($order, $resultMap['http']['response']['body']['decision']);
-            } else{
-                // For official results from from NoFraud, update the order status
-                // according to admin config preferences
-                if (isset($resultMap['http']['response']['body'])) {
-                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                    // Update state and status
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
-                }
-            }
-
-            // Finally, save order
-            $order->save();
-
-
-        } catch (\Exception $exception) {
-            $this->logger->logFailure($order, $exception);
-        }
+        $this->processOrder($resultMap, $order, $storeId);
     }
-  
+
+    /**
+     * @param $payment
+     * @return mixed
+     */
     private function _getPaymentDetailsFromMethod($payment)
     {
         $method = $payment->getMethod();
@@ -150,35 +205,42 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         return $payment;
     }
 
+    /**
+     * @param $payment
+     * @return mixed
+     */
     private function _getPaymentDetailsFromStripe($payment)
     {
-        if (empty($payment))
+        if (empty($payment)) {
             return $payment;
+        }
 
         $token = $payment->getAdditionalInformation('token');
 
-        if (empty($token))
+        if (empty($token)) {
             $token = $payment->getAdditionalInformation('stripejs_token');
-
-        if (empty($token))
-            $token = $payment->getAdditionalInformation('source_id');
-
-        if (empty($token))
-            return $payment;
-
-        try
-        {
-            // Used by card payments
-            if (strpos($token, "pm_") === 0)
-                $object = \Stripe\PaymentMethod::retrieve($token);
-            else
-                return $payment;
-
-            if (empty($object->customer))
-                return $payment;
         }
-        catch (\Exception $e)
-        {
+
+        if (empty($token)) {
+            $token = $payment->getAdditionalInformation('source_id');
+        }
+
+        if (empty($token)) {
+            return $payment;
+        }
+
+        try {
+            // Used by card payments
+            if (strpos($token, "pm_") === 0) {
+                $object = PaymentMethod::retrieve($token);
+            } else {
+                return $payment;
+            }
+
+            if (empty($object->customer)) {
+                return $payment;
+            }
+        } catch (Exception $e) {
             return $payment;
         }
 

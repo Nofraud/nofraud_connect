@@ -55,6 +55,10 @@
                         <field id="nofraud_connect/general/auto_cancel">1</field>
                     </depends>
                 </field>
+                <field id="nf_server" translate="label" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Choose NF Server</label>
+                    <source_model>NoFraud\Connect\Model\Config\Source\Server</source_model>
+                </field>
             </group>
             <group id="order_statuses" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Order Statuses</label>
@@ -82,6 +86,16 @@
                     <label>Error</label>
                     <comment>This status will be applied if NoFraud responds with an error message instead of a pass/review/fail decision.</comment>
                     <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                </field>
+            </group>
+            <group id="connection_settings" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Api Settings</label>
+                <field id="api_endpoint" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Endpoint Url</label>
+                </field>
+                <field id="test_connection" translate="button_label" sortOrder="70" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <button_label>Get Response</button_label>
+                    <frontend_model>NoFraud\Connect\Block\Adminhtml\System\Config\GetResponse</frontend_model>
                 </field>
             </group>
         </section>

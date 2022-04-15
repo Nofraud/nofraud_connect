@@ -3,12 +3,22 @@
 namespace NoFraud\Connect\Model\Config\Source;
 
 use Magento\Framework\Data\OptionSourceInterface;
+use Magento\Payment\Helper\Data;
 
+/**
+ * Provides available Payment methods
+ */
 class PaymentMethod implements OptionSourceInterface
 {
+    /**
+     * @var Data
+     */
     protected $paymentHelper;
 
-    public function __construct(\Magento\Payment\Helper\Data $paymentHelper)
+    /**
+     * @param Data $paymentHelper
+     */
+    public function __construct(Data $paymentHelper)
     {
         $this->paymentHelper = $paymentHelper;
     }
@@ -18,7 +28,7 @@ class PaymentMethod implements OptionSourceInterface
      *
      * @return array
      */
-    public function toOptionArray()
+    public function toOptionArray(): array
     {
         // get available payment methods
         $arr = [];

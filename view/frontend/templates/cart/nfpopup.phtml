@@ -1,0 +1,17 @@
+<?php
+
+/** @var $block \NoFraud\Connect\Block\Checkout\Cart */
+?>
+
+<div id="nf-modal" style="display:none">
+    <div class="modal-body-content"
+         data-qty="<?= $block->getItemsQty(); ?>"
+         data-merchant-id="megento_merchant_1"
+         data-nf-url="<?= $block->getServerUrl(); ?>/latest/index.html?"
+         data-cart-id="<?= $block->getCartId(); ?>" data-store-url="<?= $block->getStoreUrl(); ?>"
+         data-access-token="<?= $block->getCustomerToken(); ?>"
+         data-customer-is-logged-in="<?= $block->getIsCustomerLoggedIn(); ?>"
+         data-store-id="<?= $block->getStoreId(); ?>">
+        <script src="<?= $block->getServerUrl(); ?>/latest/scripts/nf-src-magento.js"></script>
+    </div>
+</div>

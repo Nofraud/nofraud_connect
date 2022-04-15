@@ -2,46 +2,51 @@
 
 namespace NoFraud\Connect\Api\Request\Handler;
 
+use NoFraud\Connect\Logger\Logger;
+
 class AbstractHandler
 {
     /**
-     * @var \NoFraud\Connect\Logger\Logger
+     * @var Logger
      */
     protected $logger;
 
     /**
      * AbstractHandler constructor.
-     * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param Logger $logger
      */
-    public function __construct($logger) {
+    public function __construct(Logger $logger)
+    {
         $this->logger = $logger;
     }
 
     /**
+     * Send Data
      * @param array  $params | NoFraud request object parameters
      * @param string $apiUrl | The URL to send to
      * @param string $requestType | Request Type
      */
-    public function send( $params, $apiUrl, $requestType = 'POST')
+    public function send(array $params, string $apiUrl, string $requestType = 'POST')
     {
-        $ch = curl_init();
+        $curl = curl_init();
 
-        if (!strcasecmp($requestType,'post')) {
+        if (!strcasecmp($requestType, 'post')) {
             $body = json_encode($params);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($body)));
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+            curl_setopt($curl, CURLOPT_POST, true);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
+                'Content-Length: ' . strlen($body)));
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $body);
         }
 
-        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
-        curl_setopt($ch, CURLOPT_URL, $apiUrl );
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_setopt($curl, CURLOPT_URL, $apiUrl);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
-        $result = curl_exec($ch);
-        $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $result = curl_exec($curl);
+        $responseCode = curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
 
-        if(curl_errno($ch)){
-            $this->logger->logApiError($apiUrl, curl_error($ch),$responseCode);
+        if (curl_errno($curl)) {
+            $this->logger->logApiError($apiUrl, curl_error($curl), $responseCode);
         }
 
         $response = [
@@ -49,33 +54,35 @@ class AbstractHandler
                 'response' => [
                     'body' => json_decode($result, true),
                     'code' => $responseCode,
-                    'time' => curl_getinfo($ch, CURLINFO_STARTTRANSFER_TIME),
+                    'time' => curl_getinfo($curl, CURLINFO_STARTTRANSFER_TIME),
                 ],
                 'client' => [
-                    'error' => curl_error($ch),
+                    'error' => curl_error($curl),
                 ],
             ],
         ];
 
-        curl_close($ch);
+        curl_close($curl);
 
         return $this->scrubEmptyValues($response);
     }
 
+    /**
+     * Remove empty values
+     * @param $array
+     * @return mixed
+     */
     protected function scrubEmptyValues($array)
     {
         // Removes any empty values (except for 'empty' numerical values such as 0 or 00.00)
         foreach ($array as $key => $value) {
-
             if (is_array($value)) {
                 $value = $this->scrubEmptyValues($value);
                 $array[$key] = $value;
             }
-
-            if ( empty($value) && !is_numeric($value) ) {
+            if (empty($value) && !is_numeric($value)) {
                 unset($array[$key]);
             }
-
         }
 
         return $array;

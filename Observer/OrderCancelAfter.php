@@ -2,7 +2,20 @@
 
 namespace NoFraud\Connect\Observer;
 
-class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
+use Magento\Framework\Event\Observer;
+use Magento\Framework\Event\ObserverInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use NoFraud\Connect\Api\ApiUrl;
+use NoFraud\Connect\Api\Portal\ApiUrl as PortalApiUrl;
+use NoFraud\Connect\Api\Portal\RequestHandler;
+use NoFraud\Connect\Api\Portal\ResponseHandler;
+use NoFraud\Connect\Helper\Config;
+use NoFraud\Connect\Logger\Logger;
+
+/**
+ * Process Order after cancel action
+ */
+class OrderCancelAfter implements ObserverInterface
 {
     protected $configHelper;
     protected $requestHandler;
@@ -12,14 +25,23 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
     protected $portalApiUrl;
     protected $storeManager;
 
+    /**
+     * @param Config $configHelper
+     * @param RequestHandler $requestHandler
+     * @param ResponseHandler $responseHandler
+     * @param PortalApiUrl $portalApiUrl
+     * @param ApiUrl $apiUrl
+     * @param Logger $logger
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(
-        \NoFraud\Connect\Helper\Config $configHelper,
-        \NoFraud\Connect\Api\Portal\RequestHandler $requestHandler,
-        \NoFraud\Connect\Api\Portal\ResponseHandler $responseHandler,
-        \NoFraud\Connect\Api\Portal\ApiUrl $portalApiUrl,
-        \NoFraud\Connect\Api\ApiUrl $apiUrl,
-        \NoFraud\Connect\Logger\Logger $logger,
-        \Magento\Store\Model\StoreManagerInterface $storeManager
+        Config $configHelper,
+        RequestHandler $requestHandler,
+        ResponseHandler $responseHandler,
+        PortalApiUrl $portalApiUrl,
+        ApiUrl $apiUrl,
+        Logger $logger,
+        StoreManagerInterface $storeManager
     ) {
         $this->configHelper = $configHelper;
         $this->requestHandler = $requestHandler;
@@ -30,7 +52,10 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
         $this->storeManager = $storeManager;
     }
 
-    public function execute(\Magento\Framework\Event\Observer $observer)
+    /**
+     * @param Observer $observer
+     */
+    public function execute(Observer $observer)
     {
         // If module is disabled in admin config, do nothing
         $storeId = $this->storeManager->getStore()->getId();
@@ -42,7 +67,8 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
         $apiToken = $this->configHelper->getApiToken($storeId);
 
         // Use the NoFraud Sandbox URL if Sandbox Mode is enabled in admin config
-        $portalApiUrl = $this->portalApiUrl->getPortalOrderCancelUrl();// Use the NoFraud Sandbox URL if Sandbox Mode is enabled in admin config
+        $portalApiUrl = $this->portalApiUrl->getPortalOrderCancelUrl();
+        // Use the NoFraud Sandbox URL if Sandbox Mode is enabled in admin config
         $apiUrl = $this->apiUrl->getProductionUrl();
 
         // Get Order Id From Observer
@@ -55,7 +81,7 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
             $apiToken
         );
 
-        if(!$request){
+        if (!$request) {
             return;
         }
 

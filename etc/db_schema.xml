@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="sales_order" resource="sales" engine="innodb">
+        <column xsi:type="boolean" name="nofraud_screened" nullable="false" default="0" comment="NoFraud screened order flag" />
+        <column xsi:type="varchar" name="nofraud_status" nullable="false" length="255" comment="NoFraud Status"/>
+        <column xsi:type="varchar" name="nofraud_transaction_id" nullable="false" length="255" comment="NoFraud Transaction Id"/>
+    </table>
+    <table name="sales_order_grid" resource="sales" comment="Sales Flat Order Grid">
+        <column xsi:type="boolean" name="nofraud_screened" nullable="false" default="0" comment="NoFraud screened order flag" />
+        <column xsi:type="varchar" name="nofraud_status" nullable="false" length="255" comment="NoFraud Status"/>
+        <column xsi:type="varchar" name="nofraud_transaction_id" nullable="false" length="255" comment="NoFraud Transaction Id"/>
+    </table>
+</schema>
