@@ -36,7 +36,7 @@ class Logger extends \Monolog\Logger
         $this->critical( "Encountered an exception while processing Order {$orderId}: \n" . (string) $exception );
     }
 
-    public function logApiError($params = null, $apiUrl, $curlError, $responseCode)
+    public function logApiError($apiUrl, $curlError, $responseCode,$params = null)
     {
         $this->critical( "Encountered an exception while sending an API request. Here is the API url: {$apiUrl}" );
         $this->critical( "Encountered an exception while sending an API request. Here are the parameters: " );
