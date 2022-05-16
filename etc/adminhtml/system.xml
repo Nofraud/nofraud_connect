@@ -21,6 +21,26 @@
                     <label>Direct API Token</label>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
+                <field id="cron_expression" translate="Review Fraud Status Cron" type="text" sortOrder="30" showInDefault="1">
+                    <label>Review Fraud Status Cron</label>
+                    <validate>required-entry</validate>
+                    <comment><![CDATA[
+                    Enter comma separated cron expressions time to check the Review Fraud Status Cron.<br/>
+<pre>
+* * * * *
+| | | | |
+| | | | +---- Day of the Week   (range: 0-6, 1 standing for Monday)
+| | | +------ Month of the Year (range: 1-12)
+| | +-------- Day of the Month  (range: 1-31)
+| +---------- Hour              (range: 0-23)
++------------ Minute            (range: 0-59)
+Example: 0 0 * * * Daily at midnight
+</pre>
+                            ]]></comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
                 <field id="sandbox_enabled" translate="label" type="select" 
                     sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Sandbox Mode?</label>
