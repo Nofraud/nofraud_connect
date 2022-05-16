@@ -59,7 +59,6 @@ class OrderFraudStatus
             ->where('store_id = ' .$storeId)
             ->where('status = \'' . $this->configHelper->getScreenedOrderStatus($storeId) . '\'');
         error_log("\n query ".$orders->getSelect(),3, BP."/var/log/orderstatud.log");
-        $this->dataHelper->addDataToLog($orders);
         return $orders;
     }
 
@@ -83,13 +82,7 @@ class OrderFraudStatus
                         $this->orderProcessor->handleAutoCancel($order, $response['http']['response']['body']['decision']);
                         error_log("\n afterAutoCancel ",3, BP."/var/log/orderstatud.log");
                         continue;
-                    }/*elseif (isset($response['http']['response']['body']['decision']) && $response['http']['response']['body']['decision'] == 'pass'){
-                        error_log("\n INSIDE PASS  ",3, BP."/var/log/orderstatud.log");
-                        if( !empty($order->getNofraudStatus()) && $order->getNofraudStatus() == "pass"){
-                            error_log("\n INSIDE PASS CONTINUE ",3, BP."/var/log/orderstatud.log");
-                            continue;
-                        }
-                    }*/
+                    }
 
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
                     $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
@@ -98,7 +91,6 @@ class OrderFraudStatus
             } catch (\Exception $exception) {
                 $this->dataHelper->addDataToLog(["Error for Order#".$order['increment_id']]);
                 $this->dataHelper->addDataToLog([$exception->getMessage()]);
-                error_log("\n exception ".print_r($exception,true),3, BP."/var/log/orderstatud.log");
                 $this->logger->logFailure($order, $exception);
             }
         }
