@@ -80,8 +80,8 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             return;
         }
 
-        $path = self::ORDER_STATUSES . '/' . $statusName; 
-
+        $path = self::ORDER_STATUSES . '/' . $statusName;
+        error_log("\n getCustomStatusConfig ERROR ".$path,3, BP."/var/log/orderstatud.log");
         return $this->_getConfigValueByStoreId($path, $storeId);
     }
 
