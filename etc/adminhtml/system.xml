@@ -51,7 +51,7 @@ Example: 0 0 * * * Daily at midnight
                     sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Screened Order Status</label>
                     <comment>If selected, only orders with this status will be screened by NoFraud.</comment>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
                 </field>
                 <field id="screened_payment_methods" translate="label" type="multiselect"
                     sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -83,25 +83,32 @@ Example: 0 0 * * * Daily at midnight
                     sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Pass</label>
                     <comment></comment>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
                 </field>
                 <field id="review" translate="label" type="select" 
                     sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Review ("Pass" or "Fail" to be determined)</label>
                     <comment></comment>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
                 </field>
                 <field id="fail" translate="label" type="select" 
                     sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Fail (Fraud Detected)</label>
                     <comment></comment>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
                 </field>
                 <field id="error" translate="label" type="select" 
                     sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Error</label>
                     <comment>This status will be applied if NoFraud responds with an error message instead of a pass/review/fail decision.</comment>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
+                </field>
+            </group>
+            <group id="order_debug" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Advanced Nofraud Connect Settings</label>
+                <field id="debug" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Debug</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
             </group>
         </section>
