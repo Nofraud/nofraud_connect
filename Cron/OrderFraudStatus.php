@@ -34,7 +34,6 @@ class OrderFraudStatus
 
     public function execute() 
     {
-        error_log("executed started",3, BP."/var/log/orderstatud.log");
         $storeList = $this->storeManager->getStores();
         foreach ($storeList as $store) {
             $storeId = $store->getId();
@@ -57,40 +56,32 @@ class OrderFraudStatus
 
         $select = $orders->getSelect()
             ->where('store_id = ' .$storeId)
-            ->where('status = \'' . $this->configHelper->getScreenedOrderStatus($storeId) . '\'');
-        error_log("\n query ".$orders->getSelect(),3, BP."/var/log/orderstatud.log");
+            ->where('status = \'' . $this->configHelper->getOrderStatusReview($storeId) . '\' OR nofraud_status = \'review\' OR status = \'' . $this->configHelper->getScreenedOrderStatus($storeId) . '\'');
         return $orders;
     }
 
     public function updateOrdersFromNoFraudApiResult($orders, $storeId) 
     {
         $apiUrl = $this->apiUrl->buildOrderApiUrl(self::ORDER_REQUEST, $this->configHelper->getApiToken($storeId));
-        error_log("\n total order ".$orders->getSize(),3, BP."/var/log/orderstatud.log");
         foreach ($orders as $order) {
-            error_log("\n order id ".$order->getId(),3, BP."/var/log/orderstatud.log");
-            error_log("\n order data ".print_r($order->getData(),true),3, BP."/var/log/orderstatud.log");
             try {
                 $orderSpecificApiUrl = $apiUrl.'/'.$order['increment_id'];
-                $this->dataHelper->addDataToLog(["Request for Order#".$order['increment_id']]);
+                $this->dataHelper->addDataToLog("Request for Order#".$order['increment_id']);
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
-                $this->dataHelper->addDataToLog(["Response for Order#".$order['increment_id']]);
+                $this->dataHelper->addDataToLog("Response for Order#".$order['increment_id']);
                 $this->dataHelper->addDataToLog($response);
-                error_log("\n response code ".print_r($response,true),3, BP."/var/log/orderstatud.log");
                 if (isset($response['http']['response']['body'])) {
                     if ($this->configHelper->getAutoCancel($storeId) && isset($response['http']['response']['body']['decision']) && ( $response['http']['response']['body']['decision'] == 'fail' || $response['http']['response']['body']['decision'] == "fraudulent") ) {
-                        error_log("\n getAutoCancel ",3, BP."/var/log/orderstatud.log");
                         $this->orderProcessor->handleAutoCancel($order, $response['http']['response']['body']['decision']);
-                        error_log("\n afterAutoCancel ",3, BP."/var/log/orderstatud.log");
                         continue;
                     }
-
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
+                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order,$response);
                     $order->save();
                 }
             } catch (\Exception $exception) {
-                $this->dataHelper->addDataToLog(["Error for Order#".$order['increment_id']]);
-                $this->dataHelper->addDataToLog([$exception->getMessage()]);
+                $this->dataHelper->addDataToLog("Error for Order#".$order['increment_id']);
+                $this->dataHelper->addDataToLog($exception->getMessage());
                 $this->logger->logFailure($order, $exception);
             }
         }
