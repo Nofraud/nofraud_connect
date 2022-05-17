@@ -59,11 +59,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
 			$writer = new \Laminas\Log\Writer\Stream($baseVarDir . '/log/nofraud_connect/payment-'.date("d-m-Y").'.log');
 			$logger = new  \Laminas\Log\Logger();
 			$logger->addWriter($writer);
-			$logger->info(print_r($data, true));
 		} else {
 			$writer = new \Zend_Log_Writer_Stream($baseVarDir . '/log/nofraud_connect/payment-'.date("d-m-Y").'.log');
 			$logger = new \Zend_Log();
 			$logger->addWriter($writer);
+		}
+		if($data && is_string($data)) {
+			$logger->info($data);
+		} else {
 			$logger->info(print_r($data, true));
 		}
 	}

@@ -6,4 +6,4 @@
     <event name="order_cancel_after">
         <observer name="NoFraud_Connect_Cancel_Order_Observer" instance="NoFraud\Connect\Observer\OrderCancelAfter" />
     </event>
-</config>
+ </config>
