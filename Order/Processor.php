@@ -59,15 +59,17 @@ class Processor
         }
     }
 
-    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order) 
+    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order,$response) 
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
-
             if ($newState == Order::STATE_HOLDED) {
                 $order->hold();
             } else if ($newState) {
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
+                if( isset($response['http']['response']['body']['decision']) && ($response['http']['response']['body']['decision'] == 'pass') ){
+                    $order->setNofraudStatus($response['http']['response']['body']['decision']);
+                }
             }
         }
     }
@@ -75,26 +77,23 @@ class Processor
     public function getStateFromStatus($state)
     {
         $statuses = $this->orderStatusCollection->create()->joinStates();
-
         if (empty($this->stateIndex)) {
             foreach ($statuses as $status) {
                 $this->stateIndex[$status->getStatus()] = $status->getState();
             }
         }
-
         return $this->stateIndex[$state] ?? null;
     }
 
     public function handleAutoCancel($order, $decision)
     {
         // if order failed NoFraud check, try to refund and cancel order
-        if ($decision == 'fail'){
-
+        if ($decision == 'fail' || $decision == 'fraudulent'){
             $this->refundOrder($order);
-
             // Handle custom cancel for Payment Method if needed
             if(!$this->_runCustomAutoCancel($order)){
                 $order->cancel();
+                $order->setNofraudStatus($decision);
                 $order->setState(Order::STATE_CANCELED)->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
                 $order->save();
             }
@@ -113,36 +112,37 @@ class Processor
                 $isCustom = false;
                 break;
         }
-
         return $isCustom;
     }
 
     private function _handleCyberSourceAutoCanel($order){
         $this->orderManagement->cancel($order->getEntityId());
-
         $status = $this->orderStatusFactory->create()->loadDefaultByState(Order::STATE_CANCELED)->getStatus();
         $order->setState(Order::STATE_CANCELED);
         $order->setStatus($status);
-
         $order->save();
     }
 
     public function refundOrder($order){
         $storeId = $this->storeManager->getStore()->getId();
         $isOffline = $order->getPayment()->getMethodInstance()->isOffline();
-
         // If payment method is online, attempt online refund if enabled
-        if (!$isOffline && $this->configHelper->getRefundOnline($storeId)) {
+        $isRefundOnline = $this->configHelper->getRefundOnline($storeId);
+        if (isset($isOffline) && !$isOffline && $isRefundOnline) {
             $invoices = $order->getInvoiceCollection();
             foreach ($invoices as $invoice){
                 try {
-                    $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
+                    if($invoice->canRefund()) {
+                        $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
+                    }elseif($invoice->canVoid()){
+                        $invoice->void();
+                    }
                 }
                 catch (\Exception $e){
                     $this->logger->logRefundException($e, $order->getId());
                 }
             }
         }
-
+        return true;
     }
 }

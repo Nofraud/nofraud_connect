@@ -95,13 +95,12 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $apiToken
         );
 
-        // Send the request to the NoFraud API and get response
-        $resultMap = $this->requestHandler->send($request, $apiUrl);
-
-        // Log request results with associated invoice number
-        $this->logger->logTransactionResults($order, $payment, $resultMap);
-
         try {
+            // Send the request to the NoFraud API and get response
+            $resultMap = $this->requestHandler->send($request, $apiUrl);
+            // Log request results with associated invoice number
+            $this->logger->logTransactionResults($order, $payment, $resultMap);
+
             // Prepare order data from result map
             $data = $this->responseHandler->getTransactionData($resultMap);
 
@@ -117,19 +116,10 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $order->setNofraudStatus($data['status']);
             $order->setNofraudTransactionId($data['id']);
 
-            // If auto-cancel is enabled, try to refund order if order failed NoFraud check
-            if ($this->configHelper->getAutoCancel($storeId) && isset($resultMap['http']['response']['body']['decision'])) {
-                $this->orderProcessor->handleAutoCancel($order, $resultMap['http']['response']['body']['decision']);
-            } else{
-                // For official results from from NoFraud, update the order status
-                // according to admin config preferences
-                if (isset($resultMap['http']['response']['body'])) {
-                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                    // Update state and status
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
-                }
+            if (isset($resultMap['http']['response']['body']) && ( $response['http']['response']['body']['decision'] != 'fail' || $response['http']['response']['body']['decision'] != "fraudulent") ) {
+                $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order,$resultMap);
             }
-
             // Finally, save order
             $order->save();
 

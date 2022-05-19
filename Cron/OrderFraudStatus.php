@@ -19,6 +19,7 @@ class OrderFraudStatus
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \NoFraud\Connect\Api\RequestHandler $requestHandler,
         \NoFraud\Connect\Helper\Config $configHelper,
+        \NoFraud\Connect\Helper\Data $dataHelper,
         \NoFraud\Connect\Api\ApiUrl $apiUrl,
         \NoFraud\Connect\Order\Processor $orderProcessor
     ) {
@@ -26,6 +27,7 @@ class OrderFraudStatus
         $this->storeManager = $storeManager;
         $this->requestHandler = $requestHandler;
         $this->configHelper = $configHelper;
+        $this->dataHelper = $dataHelper;
         $this->apiUrl = $apiUrl;
         $this->orderProcessor = $orderProcessor;
     }
@@ -49,12 +51,12 @@ class OrderFraudStatus
             ->addFieldToSelect('status')
             ->addFieldToSelect('increment_id')
             ->addFieldToSelect('entity_id')
+            ->addFieldToSelect('nofraud_status')
             ->setOrder('status', 'desc');
 
         $select = $orders->getSelect()
             ->where('store_id = ' .$storeId)
-            ->where('status = \'' . $this->configHelper->getOrderStatusReview($storeId) . '\'');
-
+            ->where('status = \'' . $this->configHelper->getOrderStatusReview($storeId) . '\' OR nofraud_status = \'review\' OR status = \'' . $this->configHelper->getScreenedOrderStatus($storeId) . '\'');
         return $orders;
     }
 
@@ -64,19 +66,22 @@ class OrderFraudStatus
         foreach ($orders as $order) {
             try {
                 $orderSpecificApiUrl = $apiUrl.'/'.$order['increment_id'];
+                $this->dataHelper->addDataToLog("Request for Order#".$order['increment_id']);
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
-
+                $this->dataHelper->addDataToLog("Response for Order#".$order['increment_id']);
+                $this->dataHelper->addDataToLog($response);
                 if (isset($response['http']['response']['body'])) {
-                    if ($this->configHelper->getAutoCancel($storeId) && isset($response['http']['response']['body']['decision'])) {
+                    if ($this->configHelper->getAutoCancel($storeId) && isset($response['http']['response']['body']['decision']) && ( $response['http']['response']['body']['decision'] == 'fail' || $response['http']['response']['body']['decision'] == "fraudulent") ) {
                         $this->orderProcessor->handleAutoCancel($order, $response['http']['response']['body']['decision']);
-                        return;
+                        continue;
                     }
-
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order);
+                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order,$response);
                     $order->save();
                 }
             } catch (\Exception $exception) {
+                $this->dataHelper->addDataToLog("Error for Order#".$order['increment_id']);
+                $this->dataHelper->addDataToLog($exception->getMessage());
                 $this->logger->logFailure($order, $exception);
             }
         }
