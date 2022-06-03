@@ -1,0 +1,16 @@
+<!--@subject {{trans "Need to review Orders at %store_name" store_name=$store.frontend_name}} @-->
+
+{{template config_path="design/email/header_template"}}
+
+<table>
+    <tr class="email-info">
+         <td>
+            <h1>{{trans "Hey, Attension please."}}</h1>
+            <p>
+                {{trans "Could you please take the required decison on all this order we are pending in review status: "}}{{var readytosendNofraud}}
+            </p>
+        </td>
+    </tr>
+</table>
+
+{{template config_path="design/email/footer_template"}}
