@@ -32,7 +32,8 @@ class ApiUrl
 
     public function whichEnvironmentUrl($storeId = null)
     {
-        return $this->configHelper->getSandboxMode($storeId) ? self::SANDBOX_URL : self::PRODUCTION_URL;
+        //return $this->configHelper->getSandboxMode($storeId) ? self::SANDBOX_URL : self::PRODUCTION_URL;
+        return $this->configHelper->getSandboxMode($storeId);
     }
 
     public function getProductionUrl(){
