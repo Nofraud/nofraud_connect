@@ -54,8 +54,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getSandboxMode($storeId = null)
     {
-        //return $this->_getConfigValueByStoreId(self::GENERAL_SANDBOX_MODE, $storeId);
-
+  
         $checkoutMode = $this->getNofraudAdvanceListMode();
 
         if( strcmp($checkoutMode,"prod") === 0 ){
@@ -122,7 +121,6 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $path = self::ORDER_STATUSES . '/' . $statusName;
-        error_log("\n getCustomStatusConfig ERROR ".$path,3, BP."/var/log/orderstatud.log");
         return $this->_getConfigValueByStoreId($path, $storeId);
     }
 
