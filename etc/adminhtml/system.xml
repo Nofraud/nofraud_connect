@@ -18,6 +18,7 @@
                 <field id="api_token" translate="label" type="obscure" 
                     sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Direct API Token</label>
+                    <comment><![CDATA[The Direct API Token is directly depends on the checkout mode so enter relavent mode API token here. you will find more about this at Advanced Nofraud Connect Settings.]]></comment>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
                 <field id="cron_expression" translate="Review Fraud Status Cron" type="text" sortOrder="30" showInDefault="1">
@@ -150,6 +151,7 @@ Example: 0 0 * * * Daily at midnight
                 <field id="list_mode" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Checkout Mode</label>        
                     <source_model>NoFraud\Connect\Model\Config\Source\CheckoutMode</source_model>
+                    <comment><![CDATA[Don'f forget to configure the relavant Direct API Token field value based on what you configure as checkout mode.]]></comment>
                 </field>
             </group>
         </section>
