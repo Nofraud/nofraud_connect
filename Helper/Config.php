@@ -17,6 +17,14 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
     const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
 
+    const PRODUCTION_URL = "https://api.nofraud.com/";
+
+    const SANDBOX_URL    = "https://apitest.nofraud.com/";
+
+    const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
+
+    const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
+
     protected $logger;
 
     protected $orderStatusesKeys = [
@@ -46,7 +54,39 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     public function getSandboxMode($storeId = null)
     {
-        return $this->_getConfigValueByStoreId(self::GENERAL_SANDBOX_MODE, $storeId);
+  
+        $checkoutMode = $this->getNofraudAdvanceListMode();
+
+        if( strcmp($checkoutMode,"prod") === 0 ){
+
+            return self::PRODUCTION_URL;
+
+        }elseif( strcmp($checkoutMode,"stag") === 0 ){
+
+            return self::SANDBOX_URL;
+
+        }elseif( strcmp($checkoutMode,"dev1") === 0 ) {
+
+            return self::SANDBOX_TEST1_URL;
+
+        }elseif( strcmp($checkoutMode,"dev2") === 0 ) {
+
+            return self::SANDBOX_TEST2_URL;
+
+        }
+
+
+    }
+
+    /**
+     * get Nofruad Connect mode
+     */
+    public function getNofraudAdvanceListMode()
+    {
+        return $this->scopeConfig->getValue(
+            'nofraud_connect/order_debug/list_mode',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
     }
 
     public function getScreenedOrderStatus($storeId = null)
@@ -81,7 +121,6 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         $path = self::ORDER_STATUSES . '/' . $statusName;
-        error_log("\n getCustomStatusConfig ERROR ".$path,3, BP."/var/log/orderstatud.log");
         return $this->_getConfigValueByStoreId($path, $storeId);
     }
 

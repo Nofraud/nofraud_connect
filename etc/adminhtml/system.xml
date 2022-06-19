@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
-
     <system>
         <tab id="nofraud" translate="label" sortOrder="512">
             <label>NoFraud</label>
@@ -19,6 +18,7 @@
                 <field id="api_token" translate="label" type="obscure" 
                     sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Direct API Token</label>
+                    <comment><![CDATA[The Direct API Token is directly depends on the checkout mode so enter relavent mode API token here. you will find more about this at Advanced Nofraud Connect Settings.]]></comment>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
                 <field id="cron_expression" translate="Review Fraud Status Cron" type="text" sortOrder="30" showInDefault="1">
@@ -40,12 +40,6 @@ Example: 0 0 * * * Daily at midnight
                     <depends>
                         <field id="enabled">1</field>
                     </depends>
-                </field>
-                <field id="sandbox_enabled" translate="label" type="select" 
-                    sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Sandbox Mode?</label>
-                    <comment>While enabled, API requests are sent to apitest.nofraud.com.</comment>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="screened_order_status" translate="label" type="select" 
                     sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -76,7 +70,7 @@ Example: 0 0 * * * Daily at midnight
                     </depends>
                 </field>
             </group>
-            <group id="order_statuses" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="order_statuses" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Order Statuses</label>
                 <comment>The following statuses will be applied to orders after checkout, according to the decision returned from NoFraud ("pass", "review", or "fail"). If no custom status is selected, NoFraud will still provide a transaction report but the order's status will not be changed.</comment>
                 <field id="pass" translate="label" type="select" 
@@ -104,11 +98,60 @@ Example: 0 0 * * * Daily at midnight
                     <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
                 </field>
             </group>
-            <group id="order_debug" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+            
+            <group id="order_email_review" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Order Pending Review Email Configuration</label>          
+                <field id="enabled" translate="label" type="select" sortOrder="0" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label>Is Enabled?</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="recipient" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Email Receiver</label>
+                    <comment>Multiple email as a Comma(,) seperator.</comment> 
+                </field>
+                <field id="hours" translate="label" type="text" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Consider Order After Hours</label> 
+                </field>
+                <field id="status" translate="label" type="select" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Consider Order Status</label>
+                    <comment></comment>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
+                </field>
+                <field id="cron_expression" translate="true" type="text" sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                    <label>Review Cron Frequency</label>
+                    <validate>required-entry</validate>
+                    <comment><![CDATA[
+                    Enter comma separated cron expressions time to check the Review Fraud Status Cron.<br/>
+<pre>
+* * * * *
+| | | | |
+| | | | +---- Day of the Week   (range: 0-6, 1 standing for Monday)
+| | | +------ Month of the Year (range: 1-12)
+| | +-------- Day of the Month  (range: 1-31)
+| +---------- Hour              (range: 0-23)
++------------ Minute            (range: 0-59)
+Example: 0 0 * * * Daily at midnight
+</pre>
+                            ]]></comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="email_template" translate="label" type="select" sortOrder="4" showInDefault="1" showInWebsite="1" showInStore="1"  canRestore="1">
+                    <label>Email Template</label>
+                    <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+                </field>
+            </group>
+            <group id="order_debug" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Advanced Nofraud Connect Settings</label>
                 <field id="debug" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Debug</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="list_mode" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Checkout Mode</label>        
+                    <source_model>NoFraud\Connect\Model\Config\Source\CheckoutMode</source_model>
+                    <comment><![CDATA[Don'f forget to configure the relavant Direct API Token field value based on what you configure as checkout mode.]]></comment>
                 </field>
             </group>
         </section>
