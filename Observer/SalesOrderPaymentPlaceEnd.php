@@ -61,6 +61,12 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
         // If order's status is ignored in admin config, do nothing
         $order = $payment->getOrder();
+
+        // If transcation happen through nofraud checkout iframe, do nothing
+        if ($order && $payment->getMethod() == 'nofraud') {
+            return;
+        }
+        
         if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
             return;
         }
