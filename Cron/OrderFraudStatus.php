@@ -65,9 +65,6 @@ class OrderFraudStatus
         $apiUrl = $this->apiUrl->buildOrderApiUrl(self::ORDER_REQUEST, $this->configHelper->getApiToken($storeId));
         foreach ($orders as $order) {
             try {
-                if ($order && $order->getPayment()->getMethod() == 'nofraud') {
-                    continue;
-                }
                 $orderSpecificApiUrl = $apiUrl.'/'.$order['increment_id'];
                 $this->dataHelper->addDataToLog("Request for Order#".$order['increment_id']);
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
