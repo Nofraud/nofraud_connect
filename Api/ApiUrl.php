@@ -26,13 +26,12 @@ class ApiUrl
     {
         $apiBaseUrl = $this->whichEnvironmentUrl();
         $apiUrl = $apiBaseUrl . $orderInfoRequest . '/' . $apiToken;
-
         return $apiUrl;
     }
 
     public function whichEnvironmentUrl($storeId = null)
     {
-        return $this->configHelper->getSandboxMode($storeId) ? self::SANDBOX_URL : self::PRODUCTION_URL;
+        return $this->configHelper->getSandboxMode($storeId);
     }
 
     public function getProductionUrl(){

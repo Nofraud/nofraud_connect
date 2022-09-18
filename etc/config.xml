@@ -9,6 +9,14 @@
                 <auto_cancel>1</auto_cancel>
                 <cron_expression>*/15 * * * *</cron_expression>
             </general>
+            <order_email_review>
+                <enabled>1</enabled>
+                <cron_expression>0 */6 * * *</cron_expression>
+                <recipient>hello@example.com</recipient>
+                <hours>72</hours>
+                <status>processing</status>
+                <email_template>nofraud_connect_order_email_review_email_template</email_template>
+            </order_email_review>
         </nofraud_connect>
     </default>
 </config>

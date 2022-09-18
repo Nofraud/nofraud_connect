@@ -11,6 +11,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     const DEFAULT_CVV_CODE = 'U';
     const BRAINTREE_CODE = 'braintree';
     const MAGEDELIGHT_AUTHNET_CIM_METHOD_CODE = 'md_authorizecim';
+    const PARADOXLABS_CIM_METHOD_CODE = 'authnetcim';
     const PL_MI_METHOD_CODE = 'nmi_directpost';
 
     protected $currency;
@@ -370,6 +371,22 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
                 break;
 
+            case self::PARADOXLABS_CIM_METHOD_CODE:
+                $avs = $payment->getCcAvsStatus();
+                $cid = $payment->getCcCidStatus();
+
+                if(!is_string($cid) && $cid instanceof Element)
+                {
+                    $cid = $cid->asArray();
+                }
+
+                $params = [
+                    "avsResultCode" => $avs,
+                    "cvvResultCode" => $cid,
+                ];
+
+                break;
+                
             case self::PL_MI_METHOD_CODE:
                 $addInfo = json_decode($payment->getAdditionalInformation('payment_additional_info'), true);
                 $avs = $addInfo['avsresponse'];

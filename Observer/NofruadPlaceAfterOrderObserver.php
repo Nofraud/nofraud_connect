@@ -2,7 +2,7 @@
 
 namespace NoFraud\Connect\Observer;
 
-class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInterface
+class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\ObserverInterface
 {
     protected $configHelper;
     protected $requestHandler;
@@ -53,23 +53,23 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             return;
         }
 
+        $order = $observer->getEvent()->getOrder();
+        
         // If payment method is blacklisted in the admin config, do nothing
-        $payment = $observer->getEvent()->getPayment();
+        $payment = $order->getPayment();
+
+        
         if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
             return;
         }
 
         // If order's status is ignored in admin config, do nothing
-        $order = $payment->getOrder();
-        
-        if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
+        /*if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
             return;
-        }
+        }*/
 
         // Update Payment with card values if payment method has stripped them
-        //
         $payment = $this->_getPaymentDetailsFromMethod($payment);
-
         // If the payment has NOT been processed by a payment processor, AND
         // is NOT an offline payment method, then do nothing
         //
@@ -80,6 +80,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         if ($this->_registry->registry('afterOrderSaveNoFraudExecuted') && !$payment->getMethodInstance()->isOffline()) {
             return;
         }
+
         // Register afterOrderSaveNoFraudExecuted on the first run to only allow transacions to be screened once
         $this->_registry->register('afterOrderSaveNoFraudExecuted', true);
 
@@ -95,10 +96,10 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $order,
             $apiToken
         );
-
         try {
             // Send the request to the NoFraud API and get response
             $resultMap = $this->requestHandler->send($request, $apiUrl);
+
             // Log request results with associated invoice number
             $this->logger->logTransactionResults($order, $payment, $resultMap);
 
@@ -117,7 +118,6 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $order->setNofraudStatus($data['status']);
             $order->setNofraudTransactionId($data['id']);
 
-            
             if (isset($resultMap['http']['response']['body']) && ($resultMap['http']['response']['body']['decision'] != 'fail' || $resultMap['http']['response']['body']['decision'] != "fraudulent") ) {
                 $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
                 $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order,$resultMap);
@@ -130,7 +130,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $this->logger->logFailure($order, $exception);
         }
     }
-  
+
     private function _getPaymentDetailsFromMethod($payment)
     {
         $method = $payment->getMethod();
