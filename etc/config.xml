@@ -12,7 +12,7 @@
             <order_email_review>
                 <enabled>1</enabled>
                 <cron_expression>0 */6 * * *</cron_expression>
-                <recipient>samumaretiya@gmail.com</recipient>
+                <recipient>hello@example.com</recipient>
                 <hours>72</hours>
                 <status>processing</status>
                 <email_template>nofraud_connect_order_email_review_email_template</email_template>
