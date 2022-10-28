@@ -52,11 +52,14 @@ class OrderFraudStatus
             ->addFieldToSelect('increment_id')
             ->addFieldToSelect('entity_id')
             ->addFieldToSelect('nofraud_status')
+            ->addFieldToSelect('nofraud_transaction_id')
             ->setOrder('status', 'desc');
 
         $select = $orders->getSelect()
             ->where('store_id = ' .$storeId)
+            ->where('nofraud_transaction_id IS NOT NULL')
             ->where('status = \'' . $this->configHelper->getOrderStatusReview($storeId) . '\' OR nofraud_status = \'review\' OR status = \'' . $this->configHelper->getScreenedOrderStatus($storeId) . '\'');
+        error_log("query ".$orders->getSelect(),3,BP."/var/log/cronimp.log");
         return $orders;
     }
 
@@ -64,6 +67,9 @@ class OrderFraudStatus
     {
         $apiUrl = $this->apiUrl->buildOrderApiUrl(self::ORDER_REQUEST, $this->configHelper->getApiToken($storeId));
         foreach ($orders as $order) {
+            if( isset($order['nofraud_transaction_id']) || $order['nofraud_transaction_id'] == NULL || $order['nofraud_transaction_id'] == ""){
+                continue;
+            }
             try {
                 $orderSpecificApiUrl = $apiUrl.'/'.$order['increment_id'];
                 $this->dataHelper->addDataToLog("Request for Order#".$order['increment_id']);
