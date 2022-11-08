@@ -1,12 +1,17 @@
 <?xml version="1.0"?>
 
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
     <group id="default">
         <job name="review_fraud_status" instance="NoFraud\Connect\Cron\OrderFraudStatus" method="execute">
-            <config_path>nofraud_connect/general/cron_expression</config_path>
+            <config_path>
+             nofraud_connect/general/cron_expression
+            </config_path>
         </job>
-	 	<job name="order_72_hours_status" instance="NoFraud\Connect\Cron\NotifyNofauad" method="execute">
-        	<config_path>nofraud_connect/order_email_review/cron_expression</config_path>
-    	</job>
+        <job name="order_72_hours_status" instance="NoFraud\Connect\Cron\NotifyNofauad" method="execute">
+            <config_path>
+             nofraud_connect/order_email_review/cron_expression
+            </config_path>
+        </job>
     </group>
 </config>

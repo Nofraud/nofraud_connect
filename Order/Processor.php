@@ -7,19 +7,62 @@ use Magento\Framework\Serialize\Serializer\Json;
 
 class Processor
 {
+    /**
+     * @var Logger
+     */
     protected $logger;
+    /**
+     * @var ConfigHelper
+     */
     protected $configHelper;
+    /**
+     * @var DataHelper
+     */
     protected $dataHelper;
+    /**
+     * @var OrderStatusCollection
+     */
     protected $orderStatusCollection;
+    /**
+     * @var StateIndex
+     */
     protected $stateIndex = [];
+    /**
+     * @var OrderManagement
+     */
     protected $orderManagement;
+    /**
+     * @var OrderStatusFactory
+     */
     protected $orderStatusFactory;
+    /**
+     * @var StoreManager
+     */
     protected $storeManager;
+    /**
+     * @var RefundInvoiceInterface
+     */
     protected $refundInvoiceInterface;
+    /**
+     * @var InvoiceRepositoryInterface
+     */
     protected $invoiceRepositoryInterface;
 
-    const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
+    private const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
 
+    /**
+     * Constructor
+     *
+     * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param \NoFraud\Connect\Helper\Data $dataHelper
+     * @param \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection
+     * @param \NoFraud\Connect\Helper\Config $configHelper
+     * @param \Magento\Sales\Api\OrderManagementInterface $orderManagement
+     * @param \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface
+     * @param \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
+     */
     public function __construct(
         \NoFraud\Connect\Logger\Logger $logger,
         \NoFraud\Connect\Helper\Data $dataHelper,
@@ -42,6 +85,12 @@ class Processor
         $this->invoiceRepositoryInterface = $invoiceRepositoryInterface;
     }
 
+    /**
+     * Get Customer Order Status
+     *
+     * @param mixed $response
+     * @param mixed $storeId
+     */
     public function getCustomOrderStatus($response, $storeId = null)
     {
         if (isset($response['body']['decision'])) {
@@ -59,21 +108,34 @@ class Processor
         }
     }
 
-    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order,$response) 
+    /**
+     * Update Order Status From NoFraud Result
+     *
+     * @param mixed $noFraudOrderStatus
+     * @param mixed $order
+     * @param mixed $response
+     */
+    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response)
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
             if ($newState == Order::STATE_HOLDED) {
                 $order->hold();
-            } else if ($newState) {
+            } elseif ($newState) {
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
-                if( isset($response['http']['response']['body']['decision']) && ($response['http']['response']['body']['decision'] == 'pass') ){
+                $noFraudresponse = $response['http']['response']['body']['decision'];
+                if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
                     $order->setNofraudStatus($response['http']['response']['body']['decision']);
                 }
             }
         }
     }
 
+    /**
+     * Get State From Status
+     *
+     * @param mixed $state
+     */
     public function getStateFromStatus($state)
     {
         $statuses = $this->orderStatusCollection->create()->joinStates();
@@ -85,26 +147,39 @@ class Processor
         return $this->stateIndex[$state] ?? null;
     }
 
+    /**
+     * Handle Auto Cancel
+     *
+     * @param mixed $order
+     * @param mixed $decision
+     */
     public function handleAutoCancel($order, $decision)
     {
         // if order failed NoFraud check, try to refund and cancel order
-        if ($decision == 'fail' || $decision == 'fraudulent'){
+        if ($decision == 'fail' || $decision == 'fraudulent') {
             $this->refundOrder($order);
             // Handle custom cancel for Payment Method if needed
-            if(!$this->_runCustomAutoCancel($order)){
+            if (!$this->_runCustomAutoCancel($order)) {
                 $order->cancel();
                 $order->setNofraudStatus($decision);
-                $order->setState(Order::STATE_CANCELED)->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
+                $order->setState(Order::STATE_CANCELED);
+                $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
                 $order->save();
             }
         }
     }
 
-    private function _runCustomAutoCancel($order){
+    /**
+     * Run Custom Auto Cancel
+     *
+     * @param mixed $order
+     */
+    private function _runCustomAutoCancel($order)
+    {
         $isCustom = true;
         $method = $order->getPayment()->getMethod();
 
-        switch ($method){
+        switch ($method) {
             case (self::CYBERSOURCE_METHOD_CODE):
                 $this->_handleCyberSourceAutoCanel($order);
                 break;
@@ -115,7 +190,13 @@ class Processor
         return $isCustom;
     }
 
-    private function _handleCyberSourceAutoCanel($order){
+    /**
+     * Handle Cyber Source Auto Canel
+     *
+     * @param mixed $order
+     */
+    private function _handleCyberSourceAutoCanel($order)
+    {
         $this->orderManagement->cancel($order->getEntityId());
         $status = $this->orderStatusFactory->create()->loadDefaultByState(Order::STATE_CANCELED)->getStatus();
         $order->setState(Order::STATE_CANCELED);
@@ -123,22 +204,27 @@ class Processor
         $order->save();
     }
 
-    public function refundOrder($order){
+    /**
+     * Refund Order
+     *
+     * @param mixed $order
+     */
+    public function refundOrder($order)
+    {
         $storeId = $this->storeManager->getStore()->getId();
         $isOffline = $order->getPayment()->getMethodInstance()->isOffline();
         // If payment method is online, attempt online refund if enabled
         $isRefundOnline = $this->configHelper->getRefundOnline($storeId);
         if (isset($isOffline) && !$isOffline && $isRefundOnline) {
             $invoices = $order->getInvoiceCollection();
-            foreach ($invoices as $invoice){
+            foreach ($invoices as $invoice) {
                 try {
-                    if($invoice->canRefund()) {
+                    if ($invoice->canRefund()) {
                         $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
-                    }elseif($invoice->canVoid()){
+                    } elseif ($invoice->canVoid()) {
                         $invoice->void();
                     }
-                }
-                catch (\Exception $e){
+                } catch (\Exception $e) {
                     $this->logger->logRefundException($e, $order->getId());
                 }
             }

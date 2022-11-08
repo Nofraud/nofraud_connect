@@ -1,11 +1,12 @@
 <?xml version="1.0"?>
 
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:Magento:module:Magento_Email:etc/email_templates.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:noNamespaceSchemaLocation="urn:Magento:module:Magento_Email:etc/email_templates.xsd">
     <template id="nofraud_connect_order_email_review_email_template"
-      	label="Order Review Admin Email Template"
-        file="order_status_email_template.html"
-        type="html"
-        module="NoFraud_Connect"
-        area="frontend"
+         label="Order Review Admin Email Template"
+         file="order_status_email_template.html"
+         type="html"
+         module="NoFraud_Connect"
+         area="frontend"
     />
 </config>

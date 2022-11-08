@@ -1,32 +1,38 @@
 <?php
- 
+
 namespace NoFraud\Connect\Helper;
- 
+
 class Config extends \Magento\Framework\App\Helper\AbstractHelper
 {
-    const GENERAL = 'nofraud_connect/general';
-    const ORDER_STATUSES = 'nofraud_connect/order_statuses';
+    private const GENERAL = 'nofraud_connect/general';
+    private const ORDER_STATUSES = 'nofraud_connect/order_statuses';
 
-    const ORDER_STATUSES_PASS = self::ORDER_STATUSES . '/pass';
-    const ORDER_STATUSES_REVIEW = self::ORDER_STATUSES . '/review';
-    const GENERAL_ENABLED = self::GENERAL . '/enabled';
-    const GENERAL_API_TOKEN = self::GENERAL . '/api_token';
-    const GENERAL_SANDBOX_MODE = self::GENERAL . '/sandbox_enabled';
-    const GENERAL_SCREENED_ORDER_STATUS = self::GENERAL . '/screened_order_status';
-    const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
-    const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
-    const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
+    private const ORDER_STATUSES_PASS = self::ORDER_STATUSES . '/pass';
+    private const ORDER_STATUSES_REVIEW = self::ORDER_STATUSES . '/review';
+    private const GENERAL_ENABLED = self::GENERAL . '/enabled';
+    private const GENERAL_API_TOKEN = self::GENERAL . '/api_token';
+    private const GENERAL_SANDBOX_MODE = self::GENERAL . '/sandbox_enabled';
+    private const GENERAL_SCREENED_ORDER_STATUS = self::GENERAL . '/screened_order_status';
+    private const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
+    private const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
+    private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
 
-    const PRODUCTION_URL = "https://api.nofraud.com/";
+    private const PRODUCTION_URL = "https://api.nofraud.com/";
 
-    const SANDBOX_URL    = "https://apitest.nofraud.com/";
+    private const SANDBOX_URL    = "https://apitest.nofraud.com/";
 
-    const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
+    private const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
 
-    const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
+    private const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
 
+    /**
+     * @var $logger
+     */
     protected $logger;
 
+    /**
+     * @var $orderStatusesKeys
+     */
     protected $orderStatusesKeys = [
         'pass',
         'review',
@@ -34,52 +40,70 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         'error',
     ];
 
+    /**
+     * Constructor
+     *
+     * @param \Magento\Framework\App\Helper\Context $context
+     * @param \NoFraud\Connect\Logger\Logger $logger
+     */
     public function __construct(
-        \Magento\Framework\App\Helper\Context $context,        
+        \Magento\Framework\App\Helper\Context $context,
         \NoFraud\Connect\Logger\Logger $logger
     ) {
         parent::__construct($context);
         $this->logger = $logger;
     }
 
+    /**
+     * Get Enabled
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getEnabled($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_ENABLED, $storeId);
     }
 
+    /**
+     * Get Api Token
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getApiToken($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_API_TOKEN, $storeId);
     }
 
+    /**
+     * Get Sandbox Mode
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getSandboxMode($storeId = null)
     {
-  
+
         $checkoutMode = $this->getNofraudAdvanceListMode();
 
-        if( strcmp($checkoutMode,"prod") === 0 ){
+        if (strcmp($checkoutMode, "prod") === 0) {
 
             return self::PRODUCTION_URL;
-
-        }elseif( strcmp($checkoutMode,"stag") === 0 ){
+        } elseif (strcmp($checkoutMode, "stag") === 0) {
 
             return self::SANDBOX_URL;
-
-        }elseif( strcmp($checkoutMode,"dev1") === 0 ) {
+        } elseif (strcmp($checkoutMode, "dev1") === 0) {
 
             return self::SANDBOX_TEST1_URL;
-
-        }elseif( strcmp($checkoutMode,"dev2") === 0 ) {
+        } elseif (strcmp($checkoutMode, "dev2") === 0) {
 
             return self::SANDBOX_TEST2_URL;
-
         }
-
-
     }
 
     /**
-     * get Nofruad Connect mode
+     * Get Nofruad Connect Mode
      */
     public function getNofraudAdvanceListMode()
     {
@@ -89,34 +113,71 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         );
     }
 
+    /**
+     * Get Screened Order Status
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getScreenedOrderStatus($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_SCREENED_ORDER_STATUS, $storeId);
     }
 
+    /**
+     * Get Auto Cancel
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getAutoCancel($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_AUTO_CANCEL, $storeId);
     }
 
+    /**
+     * Get Refund Online
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getRefundOnline($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_REFUND_ONLINE, $storeId);
     }
 
+    /**
+     * Get Order Status Pass
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getOrderStatusPass($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::ORDER_STATUSES_PASS, $storeId);
     }
 
+    /**
+     * Get Order Status Review
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function getOrderStatusReview($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::ORDER_STATUSES_REVIEW, $storeId);
     }
 
+    /**
+     * Get Custom Status Config
+     *
+     * @param mixed $statusName
+     * @param mixed $storeId
+     * @return void
+     */
     public function getCustomStatusConfig($statusName, $storeId = null)
     {
-        if (!in_array($statusName,$this->orderStatusesKeys)) {
+        if (!in_array($statusName, $this->orderStatusesKeys)) {
             return;
         }
 
@@ -124,6 +185,13 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         return $this->_getConfigValueByStoreId($path, $storeId);
     }
 
+    /**
+     * Payment Method Is Ignored
+     *
+     * @param mixed $method
+     * @param mixed $storeId
+     * @return void
+     */
     public function paymentMethodIsIgnored($method, $storeId = null)
     {
         $methods = $this->_getConfigValueByStoreId(self::GENERAL_SCREENED_PAYMENT_METHODS, $storeId);
@@ -131,13 +199,20 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         if (empty($methods)) {
             return false;
         }
-        $methods = explode(',',$methods);
-        if (in_array($method,$methods)) {
+        $methods = explode(',', $methods);
+        if (in_array($method, $methods)) {
             return false;
         }
         return true;
     }
 
+    /**
+     * Order Status Is Ignored
+     *
+     * @param mixed $order
+     * @param mixed $storeId
+     * @return void
+     */
     public function orderStatusIsIgnored($order, $storeId = null)
     {
         $storeId = $order->getStoreId();
@@ -149,20 +224,29 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         $orderStatus = $order->getStatus();
         if ($orderStatus != $screenedOrderStatus) {
             $orderId = $order->getIncrementId();
-            $this->logger->info("Ignoring Order $orderId: status is '$orderStatus;' only screening orders with status $screenedOrderStatus.");
+            $this->logger->info("Ignoring Order $orderId: status is '$orderStatus;'
+             only screening orders with status $screenedOrderStatus.");
             return true;
         }
         return false;
     }
 
-    private function _getConfigValueByStoreId($path, $storeId){
-        if (is_null($storeId)) {
+    /**
+     * Get Config Value By StoreId
+     *
+     * @param mixed $path
+     * @param mixed $storeId
+     * @return void
+     */
+    private function _getConfigValueByStoreId($path, $storeId)
+    {
+        if ($storeId === null) {
             return $this->scopeConfig->getValue($path);
         }
 
         $value = $this->scopeConfig->getValue($path, 'store', $storeId);
 
-        if(empty($value)){
+        if (empty($value)) {
             $value = $this->scopeConfig->getValue($path);
         }
 
