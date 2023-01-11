@@ -121,7 +121,18 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getScreenedOrderStatus($storeId = null)
     {
-        return $this->_getConfigValueByStoreId(self::GENERAL_SCREENED_ORDER_STATUS, $storeId);
+        $selectedOrderStatusToScreen = [];
+
+        $selectedOrderStatusToScreen = $this->_getConfigValueByStoreId(
+            self::GENERAL_SCREENED_ORDER_STATUS,
+            $storeId
+        );
+
+        if (!empty($selectedOrderStatusToScreen)) {
+            return explode(",", $selectedOrderStatusToScreen);
+        } else {
+            return $selectedOrderStatusToScreen;
+        }
     }
 
     /**
@@ -217,15 +228,15 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $storeId = $order->getStoreId();
         $screenedOrderStatus = $this->getScreenedOrderStatus($storeId);
-        if (empty($screenedOrderStatus)) {
+        if (!count($screenedOrderStatus)) {
             return false;
         }
 
         $orderStatus = $order->getStatus();
-        if ($orderStatus != $screenedOrderStatus) {
+        if (!in_array($orderStatus, $screenedOrderStatus)) {
             $orderId = $order->getIncrementId();
-            $this->logger->info("Ignoring Order $orderId: status is '$orderStatus;'
-             only screening orders with status $screenedOrderStatus.");
+            $this->logger->info("\n Ignoring Order $orderId: status is '$orderStatus;'
+             only screening orders with selected screen status.");
             return true;
         }
         return false;

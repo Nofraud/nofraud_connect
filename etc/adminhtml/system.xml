@@ -26,28 +26,17 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                       Nofraud Connect Settings.]]></comment>
                     <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                 </field>
-                <field id="cron_expression" translate="Review Fraud Status Cron" type="text"
-                 sortOrder="30" showInDefault="1">
+                <field id="cron_expression" translate="label" type="select"
+                    sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Review Fraud Status Cron</label>
+                    <source_model>NoFraud\Connect\Model\Config\Source\CronFrequency</source_model>
+                    <comment>Select the cron time frequency at you would to run the cron</comment>
                     <validate>required-entry</validate>
-                    <comment><![CDATA[
-                    Enter comma separated cron expressions time to check the Review Fraud Status Cron.<br/>
-<pre>
-* * * * *
-| | | | |
-| | | | +---- Day of the Week   (range: 0-6, 1 standing for Monday)
-| | | +------ Month of the Year (range: 1-12)
-| | +-------- Day of the Month  (range: 1-31)
-| +---------- Hour              (range: 0-23)
-+------------ Minute            (range: 0-59)
-Example: 0 0 * * * Daily at midnight
-</pre>
-                            ]]></comment>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="screened_order_status" translate="label" type="select" 
+                <field id="screened_order_status" translate="label" type="multiselect" 
                     sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Screened Order Status</label>
                     <comment>If selected, only orders with this status will be screened by NoFraud.</comment>
@@ -133,23 +122,12 @@ Example: 0 0 * * * Daily at midnight
                     <comment></comment>
                     <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
                 </field>
-                <field id="cron_expression" translate="true" type="text" sortOrder="3" 
-                showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
-                    <label>Review Cron Frequency</label>
+                <field id="cron_expression" translate="label" type="select"
+                    sortOrder="3" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Review Email Cron Frequency</label>
+                    <source_model>NoFraud\Connect\Model\Config\Source\CronFrequency</source_model>
+                    <comment>Select the cron time frequency at you would to run the cron</comment>
                     <validate>required-entry</validate>
-                    <comment><![CDATA[
-                    Enter comma separated cron expressions time to check the Review Fraud Status Cron.<br/>
-<pre>
-* * * * *
-| | | | |
-| | | | +---- Day of the Week   (range: 0-6, 1 standing for Monday)
-| | | +------ Month of the Year (range: 1-12)
-| | +-------- Day of the Month  (range: 1-31)
-| +---------- Hour              (range: 0-23)
-+------------ Minute            (range: 0-59)
-Example: 0 0 * * * Daily at midnight
-</pre>
-                            ]]></comment>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>

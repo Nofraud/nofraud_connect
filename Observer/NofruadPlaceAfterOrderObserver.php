@@ -114,6 +114,12 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
 
         // If payment method is blacklisted in the admin config, do nothing
         $payment = $order->getPayment();
+
+        // If transcation happen through nofraud checkout iframe, do nothing
+        if ($order && $payment->getMethod() == 'nofraud') {
+            return;
+        }
+        
         if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
             return;
         }
