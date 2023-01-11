@@ -4,19 +4,71 @@ namespace NoFraud\Connect\Observer;
 
 class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInterface
 {
+    /**
+     * @var ConfigHelper
+     */
     protected $configHelper;
+    /**
+     * @var RequestHandler
+     */
     protected $requestHandler;
+    /**
+     * @var ResponseHandler
+     */
     protected $responseHandler;
+    /**
+     * @var Logger
+     */
     protected $logger;
+    /**
+     * @var ApiUrl
+     */
     protected $apiUrl;
+    /**
+     * @var OrderProcessor
+     */
     protected $orderProcessor;
+    /**
+     * @var OrderStatusCollection
+     */
     protected $orderStatusCollection;
+    /**
+     * @var StoreManager
+     */
     protected $storeManager;
+    /**
+     * @var InvoiceService
+     */
     protected $invoiceService;
+    /**
+     * @var CreditmemoFactory
+     */
     protected $creditmemoFactory;
+    /**
+     * @var CreditmemoService
+     */
     protected $creditmemoService;
+    /**
+     * @var Registry
+     */
     protected $_registry;
 
+    /**
+     * Constructor
+     *
+     * @param \NoFraud\Connect\Helper\Config $configHelper
+     * @param \NoFraud\Connect\Api\RequestHandler $requestHandler
+     * @param \NoFraud\Connect\Api\ResponseHandler $responseHandler
+     * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param \NoFraud\Connect\Api\ApiUrl $apiUrl
+     * @param \NoFraud\Connect\Order\Processor $orderProcessor
+     * @param \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     * @param \Magento\Sales\Model\Service\InvoiceService $invoiceService
+     * @param \Magento\Sales\Model\Order\CreditmemoFactory $creditmemoFactory
+     * @param \Magento\Sales\Model\Service\CreditmemoService $creditmemoService
+     * @param \Magento\Framework\Registry $registry
+     */
     public function __construct(
         \NoFraud\Connect\Helper\Config $configHelper,
         \NoFraud\Connect\Api\RequestHandler $requestHandler,
@@ -45,6 +97,11 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         $this->_registry = $registry;
     }
 
+    /**
+     * Sales Order Payment Place End event handler.
+     *
+     * @param \Magento\Framework\Event\Observer $observer
+     */
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
         // If module is disabled in admin config, do nothing
@@ -61,7 +118,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
         // If order's status is ignored in admin config, do nothing
         $order = $payment->getOrder();
-        
+
         if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
             return;
         }
@@ -77,7 +134,9 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         // multiple times, but the logic below this point should not be executed
         // We use the registry to keep track of the initial execution of the event
         //
-        if ($this->_registry->registry('afterOrderSaveNoFraudExecuted') && !$payment->getMethodInstance()->isOffline()) {
+        $afterOrderSaveNoFraudExecuted = $this->_registry->registry('afterOrderSaveNoFraudExecuted');
+        $isOffline = $payment->getMethodInstance()->isOffline();
+        if ($afterOrderSaveNoFraudExecuted && !$isOffline) {
             return;
         }
         // Register afterOrderSaveNoFraudExecuted on the first run to only allow transacions to be screened once
@@ -116,21 +175,27 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $order->setNofraudScreened(true);
             $order->setNofraudStatus($data['status']);
             $order->setNofraudTransactionId($data['id']);
-
             
-            if (isset($resultMap['http']['response']['body']) && ($resultMap['http']['response']['body']['decision'] != 'fail' || $resultMap['http']['response']['body']['decision'] != "fraudulent") ) {
-                $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order,$resultMap);
+            if (isset($resultMap['http']['response']['body'])) {
+                $nofraudDecision = $resultMap['http']['response']['body']['decision'];
+                if ($nofraudDecision != 'fail' || $nofraudDecision != "fraudulent") {
+                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                }
+
             }
             // Finally, save order
             $order->save();
-
-
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);
         }
     }
-  
+
+    /**
+     * Get Payment Details From Method
+     *
+     * @param mixed $payment
+     */
     private function _getPaymentDetailsFromMethod($payment)
     {
         $method = $payment->getMethod();
@@ -142,35 +207,39 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         return $payment;
     }
 
+    /**
+     * Get Payment Details From Stripe
+     *
+     * @param mixed $payment
+     */
     private function _getPaymentDetailsFromStripe($payment)
     {
-        if (empty($payment))
+        if (empty($payment)) {
             return $payment;
+        }
 
         $token = $payment->getAdditionalInformation('token');
 
-        if (empty($token))
+        if (empty($token)) {
             $token = $payment->getAdditionalInformation('stripejs_token');
-
-        if (empty($token))
-            $token = $payment->getAdditionalInformation('source_id');
-
-        if (empty($token))
-            return $payment;
-
-        try
-        {
-            // Used by card payments
-            if (strpos($token, "pm_") === 0)
-                $object = \Stripe\PaymentMethod::retrieve($token);
-            else
-                return $payment;
-
-            if (empty($object->customer))
-                return $payment;
         }
-        catch (\Exception $e)
-        {
+        if (empty($token)) {
+            $token = $payment->getAdditionalInformation('source_id');
+        }
+        if (empty($token)) {
+            return $payment;
+        }
+        try {
+            // Used by card payments
+            if (strpos($token, "pm_") === 0) {
+                $object = \Stripe\PaymentMethod::retrieve($token);
+            } else {
+                return $payment;
+            }
+            if (empty($object->customer)) {
+                return $payment;
+            }
+        } catch (\Exception $e) {
             return $payment;
         }
 

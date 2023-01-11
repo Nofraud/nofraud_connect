@@ -1,12 +1,16 @@
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
     <event name="sales_order_payment_place_end">
-        <observer name="NoFraud_Connect_Observer" instance="NoFraud\Connect\Observer\SalesOrderPaymentPlaceEnd" />
+        <observer name="NoFraud_Connect_Observer" 
+        instance="NoFraud\Connect\Observer\SalesOrderPaymentPlaceEnd" />
     </event>
     <event name="order_cancel_after">
-        <observer name="NoFraud_Connect_Cancel_Order_Observer" instance="NoFraud\Connect\Observer\OrderCancelAfter" />
+        <observer name="NoFraud_Connect_Cancel_Order_Observer" 
+        instance="NoFraud\Connect\Observer\OrderCancelAfter" />
     </event>
     <event name="nofraud_order_place_after">
-        <observer name="nofraud_nofraud_order_place_after" instance="NoFraud\Connect\Observer\NofruadPlaceAfterOrderObserver" />
+        <observer name="nofraud_nofraud_order_place_after" 
+        instance="NoFraud\Connect\Observer\NofruadPlaceAfterOrderObserver" />
     </event>
  </config>
