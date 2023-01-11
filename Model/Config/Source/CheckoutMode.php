@@ -1,9 +1,14 @@
 <?php
- 
+
 namespace NoFraud\Connect\Model\Config\Source;
 
 class CheckoutMode implements \Magento\Framework\Data\OptionSourceInterface
 {
+    /**
+     * Return array of options as value-label pairs
+     *
+     * @return array Format: array(array('value' => '<value>', 'label' => '<label>'), ...)
+     */
     public function toOptionArray()
     {
         return [

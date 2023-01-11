@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * NoFraud_Connect Magento JS component
+ *
+ * @category    NoFraud
+ * @package     NoFraud_Connect
+ * @author      NoFraud Team <info@nofraud.com>
+ * @copyright   NoFraud (https://www.nofraud.com/)
+ * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ */
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+        <table name="sales_order" resource="sales" engine="innodb" comment="Sales Flat Order">
+                <column xsi:type="boolean" name="nofraud_screened" nullable="false" 
+                default="0" comment="NoFraud screened order flag"/>
+                <column xsi:type="text" name="nofraud_status" nullable="false" 
+                comment="NoFraud screened order status"/>
+                <column xsi:type="text" name="nofraud_transaction_id" nullable="false" 
+                comment="NoFraud screened order transaction id"/>
+        </table>
+        <table name="sales_order_grid" resource="sales" engine="innodb" comment="Sales Flat Order Grid">
+                <column xsi:type="boolean" name="nofraud_screened" nullable="false" 
+                default="0" comment="NoFraud screened order flag"/>
+                <column xsi:type="text" name="nofraud_status" nullable="false" 
+                comment="NoFraud screened order status"/>
+                <column xsi:type="text" name="nofraud_transaction_id" nullable="false" 
+                comment="NoFraud screened order transaction id"/>
+        </table>
+ </schema>
