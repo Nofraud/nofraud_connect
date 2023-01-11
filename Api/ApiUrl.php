@@ -1,15 +1,29 @@
 <?php
- 
+
 namespace NoFraud\Connect\Api;
- 
+
 class ApiUrl
 {
-    const PRODUCTION_URL = 'https://api.nofraud.com/';
-    const SANDBOX_URL    = 'https://apitest.nofraud.com/';
+    private const PRODUCTION_URL = 'https://api.nofraud.com/';
 
+    private const SANDBOX_URL    = 'https://apitest.nofraud.com/';
+
+    /**
+     * @var ConfigHelper
+     */
     protected $configHelper;
+
+    /**
+     * @var Logger
+     */
     protected $logger;
 
+    /**
+     * Constructor
+     *
+     * @param \NoFraud\Connect\Helper\Config $configHelper
+     * @param \NoFraud\Connect\Logger\Logger $logger
+     */
     public function __construct(
         \NoFraud\Connect\Helper\Config $configHelper,
         \NoFraud\Connect\Logger\Logger $logger
@@ -19,6 +33,8 @@ class ApiUrl
     }
 
     /**
+     * Build Order Api Url
+     *
      * @param string $orderInfoRequest | Info wanted from order e.x. 'status'
      * @param string $apiToken | API Token
      */
@@ -29,12 +45,24 @@ class ApiUrl
         return $apiUrl;
     }
 
+    /**
+     * Which Environment Url
+     *
+     * @param mixed $storeId
+     * @return void
+     */
     public function whichEnvironmentUrl($storeId = null)
     {
         return $this->configHelper->getSandboxMode($storeId);
     }
 
-    public function getProductionUrl(){
+    /**
+     * Get Production Url
+     *
+     * @return void
+     */
+    public function getProductionUrl()
+    {
         return self::PRODUCTION_URL;
     }
 }

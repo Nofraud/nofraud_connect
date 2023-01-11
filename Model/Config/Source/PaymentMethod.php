@@ -6,8 +6,16 @@ use Magento\Framework\Data\OptionSourceInterface;
 
 class PaymentMethod implements OptionSourceInterface
 {
+    /**
+     * @var PaymentHelper
+     */
     protected $paymentHelper;
 
+    /**
+     * Constructor
+     *
+     * @param \Magento\Payment\Helper\Data $paymentHelper
+     */
     public function __construct(\Magento\Payment\Helper\Data $paymentHelper)
     {
         $this->paymentHelper = $paymentHelper;

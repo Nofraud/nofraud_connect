@@ -12,56 +12,70 @@ class AbstractHandler
     /**
      * AbstractHandler constructor.
      * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param \Magento\Framework\HTTP\Client\Curl $curl
      */
-    public function __construct($logger) {
+    public function __construct(
+        \NoFraud\Connect\Logger\Logger $logger,
+        \Magento\Framework\HTTP\Client\Curl $curl
+    ) {
         $this->logger = $logger;
+        $this->_curl = $curl;
     }
 
     /**
-     * @param array  $params | NoFraud request object parameters
+     * Send Request
+     *
+     * @param array $params |NoFraud request object parameters
      * @param string $apiUrl | The URL to send to
      * @param string $requestType | Request Type
      */
-    public function send( $params, $apiUrl, $requestType = 'POST')
+    public function send($params, $apiUrl, $requestType = 'POST')
     {
-        $ch = curl_init();
-
-        if (!strcasecmp($requestType,'post')) {
-            $body = json_encode($params);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($body)));
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        if (!strcasecmp($requestType, 'post')) {
+            $headers = ['Content-Type' => 'application/json', 'Content-Length' => strlen(json_encode($params))];
+            $this->_curl->setHeaders($headers);
+        } else {
+            $headers = ['Content-Type' => 'application/json'];
+            $this->_curl->setHeaders($headers);
+        }
+        $this->_curl->setOption(CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+        $this->_curl->setOption(CURLOPT_RETURNTRANSFER, 1);
+        $errorMessage = "";
+        try {
+            if (!strcasecmp($requestType, 'post')) {
+                $this->_curl->post($apiUrl, json_encode($params));
+            } else {
+                $this->_curl->get($apiUrl);
+            }
+            $responseCode = $this->_curl->getStatus();
+        } catch (\Exception $e) {
+            $responseCode = $this->_curl->getStatus();
+            $this->logger->logApiError($apiUrl, $e->getMessage(), $responseCode);
+            $errorMessage = $e->getMessage();
         }
 
-        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
-        curl_setopt($ch, CURLOPT_URL, $apiUrl );
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        $result = curl_exec($ch);
-        $responseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-
-        if(curl_errno($ch)){
-            $this->logger->logApiError($apiUrl, curl_error($ch),$responseCode);
-        }
-
+        $curlResponse = json_decode($this->_curl->getBody(), true);
         $response = [
             'http' => [
                 'response' => [
-                    'body' => json_decode($result, true),
+                    'body' => $curlResponse,
                     'code' => $responseCode,
-                    'time' => curl_getinfo($ch, CURLINFO_STARTTRANSFER_TIME),
+                    'time' => "",
                 ],
                 'client' => [
-                    'error' => curl_error($ch),
+                    'error' => $errorMessage,
                 ],
             ],
         ];
-
-        curl_close($ch);
-
         return $this->scrubEmptyValues($response);
     }
 
+    /**
+     * Scrub Empty Values
+     *
+     * @param array $array
+     * @return void
+     */
     protected function scrubEmptyValues($array)
     {
         // Removes any empty values (except for 'empty' numerical values such as 0 or 00.00)
@@ -72,10 +86,9 @@ class AbstractHandler
                 $array[$key] = $value;
             }
 
-            if ( empty($value) && !is_numeric($value) ) {
+            if (empty($value) && !is_numeric($value)) {
                 unset($array[$key]);
             }
-
         }
 
         return $array;

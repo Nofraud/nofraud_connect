@@ -7,11 +7,23 @@ use Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory;
 
 class NoFraudStatus implements OptionSourceInterface
 {
+    /**
+     * @var PaymentHelper
+     */
     protected $paymentHelper;
 
+    /**
+     * @var StatusCollectionFactory
+     */
     protected $statusCollectionFactory;
-    
-    public function __construct(\Magento\Payment\Helper\Data $paymentHelper,CollectionFactory $statusCollectionFactory)
+
+    /**
+     * Constructor
+     *
+     * @param \Magento\Payment\Helper\Data $paymentHelper
+     * @param CollectionFactory $statusCollectionFactory
+     */
+    public function __construct(\Magento\Payment\Helper\Data $paymentHelper, CollectionFactory $statusCollectionFactory)
     {
         $this->paymentHelper = $paymentHelper;
         $this->statusCollectionFactory = $statusCollectionFactory;

@@ -7,7 +7,8 @@ use Magento\Framework\Data\OptionSourceInterface;
 use Magento\Signifyd\Api\Data\CaseInterface;
 
 /**
- * Class Options
+ * Source of option values in a form of value-label pairs
+ *
  */
 class Options implements OptionSourceInterface
 {
@@ -27,7 +28,9 @@ class Options implements OptionSourceInterface
     }
 
     /**
-     * {@inheritdoc}
+     * Return array of options as value-label pairs
+     *
+     * @return array Format: array(array('value' => '<value>', 'label' => '<label>'), ...)
      */
     public function toOptionArray()
     {

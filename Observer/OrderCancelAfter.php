@@ -4,14 +4,46 @@ namespace NoFraud\Connect\Observer;
 
 class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
 {
+    /**
+     * @var ConfigHelper
+     */
     protected $configHelper;
+    /**
+     * @var RequestHandler
+     */
     protected $requestHandler;
+    /**
+     * @var ResponseHandler
+     */
     protected $responseHandler;
+    /**
+     * @var Logger
+     */
     protected $logger;
+    /**
+     * @var ApiUrl
+     */
     protected $apiUrl;
+    /**
+     * @var PortalApiUrl
+     */
     protected $portalApiUrl;
+    /**
+     * @var StoreManager
+     */
     protected $storeManager;
 
+    /**
+     * Constructor
+     *
+     * @param \NoFraud\Connect\Helper\Config $configHelper
+     * @param \NoFraud\Connect\Api\Portal\RequestHandler $requestHandler
+     * @param \NoFraud\Connect\Api\Portal\ResponseHandler $responseHandler
+     * @param \NoFraud\Connect\Api\Portal\ApiUrl $portalApiUrl
+     * @param \NoFraud\Connect\Api\ApiUrl $apiUrl
+     * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
+     */
     public function __construct(
         \NoFraud\Connect\Helper\Config $configHelper,
         \NoFraud\Connect\Api\Portal\RequestHandler $requestHandler,
@@ -30,6 +62,11 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
         $this->storeManager = $storeManager;
     }
 
+    /**
+     * Order Cancel After event handler.
+     *
+     * @param \Magento\Framework\Event\Observer $observer
+     */
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
         // If module is disabled in admin config, do nothing
@@ -42,7 +79,7 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
         $apiToken = $this->configHelper->getApiToken($storeId);
 
         // Use the NoFraud Sandbox URL if Sandbox Mode is enabled in admin config
-        $portalApiUrl = $this->portalApiUrl->getPortalOrderCancelUrl();// Use the NoFraud Sandbox URL if Sandbox Mode is enabled in admin config
+        $portalApiUrl = $this->portalApiUrl->getPortalOrderCancelUrl();
         $apiUrl = $this->apiUrl->getProductionUrl();
 
         // Get Order Id From Observer
@@ -55,7 +92,7 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
             $apiToken
         );
 
-        if(!$request){
+        if (!$request) {
             return;
         }
 
