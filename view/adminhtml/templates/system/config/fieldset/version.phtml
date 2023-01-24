@@ -1,0 +1,50 @@
+<?php
+/**
+ * Copyright © 2023 Nofraud. All rights reserved.
+ */
+// @codingStandardsIgnoreFile
+?>
+<div class="nofraudconnect-version-section">
+    <h1>
+        <a>NoFraud Connect (M2)</a>
+    </h1>
+    <div>
+        Support:
+        <a target="_blank" href="mailto:support@nofraud.com"><?= __('support@nofraud.com'); ?></a>
+        <br>
+        Contact us:
+        <a target="_blank" href="mailto:info@nofraud.com"><?= __('info@nofraud.com'); ?></a>
+    </div>
+    <div class="version">
+        <span style="float: left;">Installed Version: <?= $block->getVersion(); ?></span>
+    </div>
+    <div class="user-guide">
+        To configure this extension, please read our <a target="_blank" href="https://github.com/Nofraud/nofraud_connect/#markdown-header-configuration">User Guide</a>
+    </div>
+    <div class="logger">
+        For us to better diagnose your site, please download and send us this <a href="<?=$block->getDownloadDebugUrl()?>">file</a> along with your support request
+    </div>
+
+</div>
+
+<style>
+    .nofraudconnect-version-section{
+        background: #f8f8f8;
+        border: 1px solid #e3e3e3;
+        padding: 1.5rem;
+    }
+    .nofraudconnect-version-section h1{
+        font-weight: bold;
+    }
+    .nofraudconnect-version-section .version{
+        text-align: right;
+    }
+    .nofraudconnect-version-section a{
+        color: #eb5202;
+        text-decoration: none;
+    }
+    .nofraudconnect-version-section a:hover{
+        color: #eb5202;
+        text-decoration: none;
+    }
+</style>
