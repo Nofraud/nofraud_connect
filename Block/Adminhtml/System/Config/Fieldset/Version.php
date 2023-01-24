@@ -72,24 +72,4 @@ class Version extends Template implements RendererInterface
     {
         return $this->getBaseUrl().'var/log/nofraud_connect/info.log';
     }
-
-    public function getCheckCurrentVersion()
-    {
-        $versionCheckUrl = "https://github.com/Nofraud/nofraud_connect/blob/master/composer.json";
-        $this->_curl->setOption(CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
-        $this->_curl->setOption(CURLOPT_RETURNTRANSFER, 1);
-        $this->_curl->get($versionCheckUrl);
-        $errorMessage = "";
-
-        try {
-            $responseCode = $this->_curl->getStatus();
-        } catch (\Exception $e) {
-            $responseCode = $this->_curl->getStatus();
-            $this->logger->logApiError($versionCheckUrl, $e->getMessage(), $responseCode);
-            $errorMessage = $e->getMessage();
-        }
-        
-        $curlResponse = json_decode($this->_curl->getBody(), true);
-        print_r($curlResponse);
-    }
 }
