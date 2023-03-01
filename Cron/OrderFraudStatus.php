@@ -133,7 +133,7 @@ class OrderFraudStatus
                 $this->dataHelper->addDataToLog($response);
                 if (isset($response['http']['response']['body'])) {
                     if ($this->configHelper->getAutoCancel($storeId)) {
-                        $decision = $response['http']['response']['body']['decision'];
+                        $decision = $response['http']['response']['body']['decision'] ?? "";
                         if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
                             $this->orderProcessor->handleAutoCancel($order, $decision);
                             continue;
