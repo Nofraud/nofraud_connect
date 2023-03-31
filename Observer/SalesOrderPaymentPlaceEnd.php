@@ -175,16 +175,25 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $order->setNofraudScreened(true);
             $order->setNofraudStatus($data['status']);
             $order->setNofraudTransactionId($data['id']);
-            
+
             if (isset($resultMap['http']['response']['body'])) {
                 $nofraudDecision = $resultMap['http']['response']['body']['decision'];
                 if ($nofraudDecision != 'fail' || $nofraudDecision != "fraudulent") {
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                    if (isset($nofraudDecision) && ($nofraudDecision == 'pass')) {
+                        if (!empty($newStatus)) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                        } else {
+                            $order->setNofraudStatus($resultMap['http']['response']['body']['decision']);
+                        }
+                    } else {
+                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                    }
                 }
-
             }
             // Finally, save order
+
+
             $order->save();
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);

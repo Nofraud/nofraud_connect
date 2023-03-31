@@ -101,13 +101,13 @@ class OrderFraudStatus
 
         $orderStatusReview   = $this->configHelper->getOrderStatusReview($storeId);
         $screenedOrderStatus = $this->configHelper->getScreenedOrderStatus($storeId);
-        $orderStatusToScreen = "'".implode("','", $screenedOrderStatus)."'";
-        
+        $orderStatusToScreen = "'" . implode("','", $screenedOrderStatus) . "'";
+
         $select = $orders->getSelect()
-        ->where('store_id = ' . $storeId)
-        ->where('nofraud_transaction_id IS NOT NULL')
-        ->where('status = \''.$orderStatusReview.'\' OR nofraud_status =\'review\' 
-        OR status in ('.$orderStatusToScreen.')');
+            ->where('store_id = ' . $storeId)
+            ->where('nofraud_transaction_id IS NOT NULL')
+            ->where('status = \'' . $orderStatusReview . '\' OR nofraud_status =\'review\' 
+        OR status in (' . $orderStatusToScreen . ')');
         return $orders;
     }
 
@@ -140,7 +140,16 @@ class OrderFraudStatus
                         }
                     }
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                    $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
+                    if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
+                        if (!empty($newStatus)) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                        } else {
+                            $order->setNofraudStatus($response['http']['response']['body']['decision']);
+                        }
+                    } else {
+                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                    }
                     $order->save();
                 }
             } catch (\Exception $exception) {
