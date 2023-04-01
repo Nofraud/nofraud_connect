@@ -106,8 +106,7 @@ class OrderFraudStatus
         $select = $orders->getSelect()
             ->where('store_id = ' . $storeId)
             ->where('nofraud_transaction_id IS NOT NULL')
-            ->where('status = \'' . $orderStatusReview . '\' OR nofraud_status =\'review\' 
-        OR status in (' . $orderStatusToScreen . ')');
+            ->where('(status = \''.$orderStatusReview.'\' OR status in ('.$orderStatusToScreen.')) AND nofraud_status =\'review\'');        
         return $orders;
     }
 
