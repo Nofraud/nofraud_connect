@@ -2,7 +2,7 @@ ame: Release
 on:
   push:
     branches:
-      - main
+      - master
 
 permissions: read-all
 
