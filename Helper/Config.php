@@ -228,16 +228,18 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $storeId = $order->getStoreId();
         $screenedOrderStatus = $this->getScreenedOrderStatus($storeId);
-        if (!count($screenedOrderStatus)) {
-            return false;
-        }
+        if (is_array($screenedOrderStatus)) {
+            if (!count($screenedOrderStatus)) {
+                return false;
+            }
 
-        $orderStatus = $order->getStatus();
-        if (!in_array($orderStatus, $screenedOrderStatus)) {
-            $orderId = $order->getIncrementId();
-            $this->logger->info("\n Ignoring Order $orderId: status is '$orderStatus;'
-             only screening orders with selected screen status.");
-            return true;
+            $orderStatus = $order->getStatus();
+            if (!in_array($orderStatus, $screenedOrderStatus)) {
+                $orderId = $order->getIncrementId();
+                $this->logger->info("\n Ignoring Order $orderId: status is '$orderStatus;'
+                only screening orders with selected screen status.");
+                return true;
+            }
         }
         return false;
     }
