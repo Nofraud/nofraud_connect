@@ -80,7 +80,7 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                     sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Pass</label>
                     <comment></comment>
-                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatusPass</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudOrderStatus</source_model>
                 </field>
                 <field id="review" translate="label" type="select" 
                     sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -99,7 +99,7 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                     <label>Error</label>
                     <comment>This status will be applied if NoFraud responds with an error message 
                     instead of a pass/review/fail decision.</comment>
-                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudStatus</source_model>
+                    <source_model>NoFraud\Connect\Model\Config\Source\NoFraudOrderStatus</source_model>
                 </field>
             </group>
             

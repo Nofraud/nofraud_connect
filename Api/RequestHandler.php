@@ -263,13 +263,13 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      */
     protected function decryptLast4($payment)
     {
-        $last4 = $payment->getCcLast4();
+        $last4 = $payment->getCcLast4() ?? "";
 
-        if (!empty($last4) && strlen($last4) != 4) {
+        if (isset($last4) && !empty($last4) && strlen($last4) != 4) {
             $last4 = $payment->decrypt($last4);
         }
 
-        if (strlen($last4) == 4 && ctype_digit($last4)) {
+        if (isset($last4) && !empty($last4) && strlen($last4) == 4 && ctype_digit($last4)) {
             return $last4;
         }
     }
@@ -303,14 +303,15 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      */
     protected function buildCcExpDate($payment)
     {
-        $expMonth = $payment->getCcExpMonth();
+        $expMonth = $payment->getCcExpMonth() ?? "";
         $expYear = $payment->getCcExpYear();
 
         // Pad a one-digit month with a 0;
-        if (strlen($expMonth) == 1) {
-            $expMonth = "0" . $expMonth;
+        if (isset($expMonth) && !empty($expMonth)){
+            if (strlen($expMonth) == 1) {
+                $expMonth = "0" . $expMonth;
+            }
         }
-
         // NoFraud requires an expiration month;
         // If month is not valid, return nothing;
         if (!in_array($expMonth, ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'])) {
@@ -320,10 +321,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         // NoFraud requires an expiration year;
         // If year is invalid, return nothing;
         // Else if year is four digits (1999), truncate it to two (99);
-        if (strlen($expYear) > 4) {
-            return;
-        } elseif (strlen($expYear) == 4) {
-            $expYear = substr($expYear, -2);
+        if (isset($expYear) && !empty($expYear)){
+            if (strlen($expYear) > 4) {
+                return;
+            } elseif (strlen($expYear) == 4) {
+                $expYear = substr($expYear, -2);
+            }
         }
 
         // Return the expiration date in the format MMYY;

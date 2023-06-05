@@ -5,7 +5,7 @@ namespace NoFraud\Connect\Model\Config\Source;
 use Magento\Framework\Data\OptionSourceInterface;
 use Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory;
 
-class NoFraudStatusPass implements OptionSourceInterface
+class NoFraudOrderStatus implements OptionSourceInterface
 {
 
     /**
