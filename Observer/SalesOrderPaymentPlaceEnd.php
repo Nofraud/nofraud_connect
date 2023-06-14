@@ -208,9 +208,15 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
                     }
                 }
             }
-            // Finally, save order
             $order->setNofraudStatus($data['status']);
             $order->save();
+
+            // If order fails screening and auto-cancel is enabled in admin config, cancel the order
+            if ($this->configHelper->getAutoCancel($storeId)) {
+                if (isset($nofraudDecision) && ($nofraudDecision == 'fail' || $nofraudDecision == 'fraudulent')) {
+                    $this->orderProcessor->handleAutocancel($order, $nofraudDecision);
+                }
+            }
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);
         }
