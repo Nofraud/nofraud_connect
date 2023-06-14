@@ -183,21 +183,19 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             if (isset($resultMap['http']['response']['body'])) {
                 $nofraudDecision = $resultMap['http']['response']['body']['decision'] ?? "";
                 if (isset($nofraudDecision) && !empty($nofraudDecision)) {
-                    if ($nofraudDecision != 'fail' || $nofraudDecision != "fraudulent") {
-                        $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                        if (isset($nofraudDecision) && ($nofraudDecision == 'error')) {
-                            if (!empty($newStatus)) {
-                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
-                            }
-                        }
-                        if (isset($nofraudDecision) && ($nofraudDecision == 'pass')) {
-                            if (!empty($newStatus)) {
-                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
-                            }
-                        }
-                        if (isset($nofraudDecision) && ($nofraudDecision == 'review')) {
+                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                    if (isset($nofraudDecision) && ($nofraudDecision == 'error')) {
+                        if (!empty($newStatus)) {
                             $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
                         }
+                    }
+                    if (isset($nofraudDecision) && ($nofraudDecision == 'pass')) {
+                        if (!empty($newStatus)) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                        }
+                    }
+                    if (isset($nofraudDecision) && ($nofraudDecision == 'review')) {
+                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
                     }
                 } else {
                     $nofraudErrorDecision = $resultMap['http']['response']['body']['Errors'] ?? "";
