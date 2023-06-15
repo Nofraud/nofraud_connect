@@ -101,13 +101,12 @@ class OrderFraudStatus
 
         $orderStatusReview   = $this->configHelper->getOrderStatusReview($storeId);
         $screenedOrderStatus = $this->configHelper->getScreenedOrderStatus($storeId);
-        $orderStatusToScreen = "'".implode("','", $screenedOrderStatus)."'";
-        
+        $orderStatusToScreen = "'" . implode("','", $screenedOrderStatus) . "'";
+
         $select = $orders->getSelect()
-        ->where('store_id = ' . $storeId)
-        ->where('nofraud_transaction_id IS NOT NULL')
-        ->where('status = \''.$orderStatusReview.'\' OR nofraud_status =\'review\' 
-        OR status in ('.$orderStatusToScreen.')');
+            ->where('store_id = ' . $storeId)
+            ->where('nofraud_transaction_id IS NOT NULL')
+            ->where('(status = \'' . $orderStatusReview . '\' OR status in (' . $orderStatusToScreen . ')) AND nofraud_status =\'review\'');
         return $orders;
     }
 
@@ -127,20 +126,50 @@ class OrderFraudStatus
             }
             try {
                 $orderSpecificApiUrl = $apiUrl . '/' . $order['increment_id'];
-                $this->dataHelper->addDataToLog("Request for Order#" . $order['increment_id']);
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
-                $this->dataHelper->addDataToLog("Response for Order#" . $order['increment_id']);
                 $this->dataHelper->addDataToLog($response);
                 if (isset($response['http']['response']['body'])) {
-                    if ($this->configHelper->getAutoCancel($storeId)) {
-                        $decision = $response['http']['response']['body']['decision'] ?? "";
-                        if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
-                            $this->orderProcessor->handleAutoCancel($order, $decision);
+                    $decision = $response['http']['response']['body']['decision'] ?? "";
+                    if (isset($decision) && !empty($decision)) {
+                        $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
+                        if (isset($decision) && ($decision == 'error')) {
+                            if (empty($newStatus)) {
+                                $order->setNofraudStatus($decision);
+                            } else {
+                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                            }
+                            $order->save();
                             continue;
                         }
+                        if ($this->configHelper->getAutoCancel($storeId)) {
+                            if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
+                                $this->orderProcessor->handleAutoCancel($order, $decision);
+                                continue;
+                            }
+                        }
+                        if (isset($decision) && ($decision == 'pass')) {
+                            if (!empty($newStatus)) {
+                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                            } else {
+                                $order->setNofraudStatus($decision);
+                            }
+                            $order->save();
+                            continue;
+                        }
+                        if (isset($decision) && ($decision == 'review')) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                        }
+                    } else {
+                        $nofraudErrorDecision = $resultMap['http']['response']['body']['Errors'] ?? "";
+                        $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
+                        if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
+                            if (empty($newStatus)) {
+                                $order->setNofraudStatus('Error');
+                            } else {
+                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                            }
+                        }
                     }
-                    $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
                     $order->save();
                 }
             } catch (\Exception $exception) {

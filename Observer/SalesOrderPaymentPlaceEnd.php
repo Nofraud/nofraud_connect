@@ -119,6 +119,11 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         // If order's status is ignored in admin config, do nothing
         $order = $payment->getOrder();
 
+        // If transcation happen through nofraud checkout iframe, do nothing
+        if ($order && $payment->getMethod() == 'nofraud') {
+            return;
+        }
+        
         if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
             return;
         }
@@ -163,7 +168,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
             // Prepare order data from result map
             $data = $this->responseHandler->getTransactionData($resultMap);
-
+    
             // For all API responses (official results from NoFraud, client errors, etc.),
             // add an informative comment to the order in Magento admin
             $comment = $data['comment'];
@@ -173,18 +178,40 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
             // Order has been screened
             $order->setNofraudScreened(true);
-            $order->setNofraudStatus($data['status']);
             $order->setNofraudTransactionId($data['id']);
-            
-            if (isset($resultMap['http']['response']['body'])) {
-                $nofraudDecision = $resultMap['http']['response']['body']['decision'];
-                if ($nofraudDecision != 'fail' || $nofraudDecision != "fraudulent") {
-                    $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
-                }
 
+            if (isset($resultMap['http']['response']['body'])) {
+                $nofraudDecision = $resultMap['http']['response']['body']['decision'] ?? "";
+                if (isset($nofraudDecision) && !empty($nofraudDecision)) {
+                    if ($nofraudDecision != 'fail' || $nofraudDecision != "fraudulent") {
+                        $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                        if (isset($nofraudDecision) && ($nofraudDecision == 'error')) {
+                            if (!empty($newStatus)) {
+                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                            }
+                        }
+                        if (isset($nofraudDecision) && ($nofraudDecision == 'pass')) {
+                            if (!empty($newStatus)) {
+                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                            }
+                        }
+                        if (isset($nofraudDecision) && ($nofraudDecision == 'review')) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                        }
+                    }
+                } else {
+                    $nofraudErrorDecision = $resultMap['http']['response']['body']['Errors'] ?? "";
+                    if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
+                        $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                        if (!empty($newStatus)) {
+                            $order->setNofraudStatus($data['status']);
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                        }
+                    }
+                }
             }
             // Finally, save order
+            $order->setNofraudStatus($data['status']);
             $order->save();
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);

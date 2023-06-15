@@ -98,7 +98,7 @@ class Processor
         }
 
         if (isset($response['code'])) {
-            if ($response['code'] > 299) {
+            if ($response['code'] > 299 || isset($response['body']['Errors'])) {
                 $statusName = 'error';
             }
         }
@@ -123,7 +123,7 @@ class Processor
                 $order->hold();
             } elseif ($newState) {
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
-                $noFraudresponse = $response['http']['response']['body']['decision'];
+                $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
                     $order->setNofraudStatus($response['http']['response']['body']['decision']);
                 }
