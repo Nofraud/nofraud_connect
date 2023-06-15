@@ -160,7 +160,7 @@ class OrderFraudStatus
                             $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
                         }
                     } else {
-                        $nofraudErrorDecision = $resultMap['http']['response']['body']['Errors'] ?? "";
+                        $nofraudErrorDecision = $response['http']['response']['body']['Errors'] ?? "";
                         $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
                         if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
                             if (empty($newStatus)) {
