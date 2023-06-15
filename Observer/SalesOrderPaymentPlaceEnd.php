@@ -213,7 +213,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
             // If order fails screening and auto-cancel is enabled in admin config, cancel the order
             if ($this->configHelper->getAutoCancel($storeId)) {
-                if (isset($nofraudDecision) && ($nofraudDecision == 'fail' || $nofraudDecision == 'fraudulent')) {
+                if (isset($nofraudDecision) && $nofraudDecision == 'fail') {
                     $this->orderProcessor->handleAutocancel($order, $nofraudDecision);
                 }
             }
