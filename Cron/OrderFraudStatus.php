@@ -143,13 +143,17 @@ class OrderFraudStatus
                         }
                         if ($this->configHelper->getAutoCancel($storeId)) {
                             if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
+                                $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order['increment_id']);
                                 // If auto-cancel fails, then update the order status to the configured status
                                 if(!$this->orderProcessor->handleAutoCancel($order, $decision)){
+                                    $this->dataHelper->addDataToLog("Auto-cancel failed for Order#" . $order['increment_id']);
                                     if (!empty($newStatus)) {
+                                        $this->dataHelper->addDataToLog("Updating Order#" . $order['increment_id'] . " to " . $newStatus);
                                         $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
                                     } else {
                                         $order->setNofraudStatus($decision);
                                     }
+                                    $order->save();
                                 }
                                 continue;
                             }
