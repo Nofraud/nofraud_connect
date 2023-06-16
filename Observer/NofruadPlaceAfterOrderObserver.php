@@ -1,73 +1,51 @@
 <?php
-
+/**
+ * This file is an observer class for the NoFraud Connect extension that watches
+ * for the nofraud_order_place_after event which is fired by the NoFraud Checkout
+ * Module after an order is placed.
+ *
+ * @category Observer
+ * @package  NoFraud_Connect
+ * @link     https://nofraud.com
+ */
 namespace NoFraud\Connect\Observer;
-
+/**
+ * NofruadPlaceAfterOrderObserver class for NoFraud Connect extension.
+ *
+ * @category Class
+ * @package  NoFraud_Connect
+ * @link     https://nofraud.com
+ */
 class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\ObserverInterface
 {
-    /**
-     * @var ConfigHelper
-     */
     protected $configHelper;
-    /**
-     * @var RequestHandler
-     */
     protected $requestHandler;
-    /**
-     * @var ResponseHandler
-     */
     protected $responseHandler;
-    /**
-     * @var Logger
-     */
     protected $logger;
-    /**
-     * @var ApiUrl
-     */
     protected $apiUrl;
-    /**
-     * @var OrderProcessor
-     */
     protected $orderProcessor;
-    /**
-     * @var OrderStatusCollection
-     */
     protected $orderStatusCollection;
-    /**
-     * @var StoreManager
-     */
     protected $storeManager;
-    /**
-     * @var InvoiceService
-     */
     protected $invoiceService;
-    /**
-     * @var CreditmemoFactory
-     */
     protected $creditmemoFactory;
-    /**
-     * @var CreditmemoService
-     */
     protected $creditmemoService;
-    /**
-     * @var Registry
-     */
     protected $_registry;
 
     /**
      * Constructor
      *
-     * @param \NoFraud\Connect\Helper\Config $configHelper
-     * @param \NoFraud\Connect\Api\RequestHandler $requestHandler
-     * @param \NoFraud\Connect\Api\ResponseHandler $responseHandler
-     * @param \NoFraud\Connect\Logger\Logger $logger
-     * @param \NoFraud\Connect\Api\ApiUrl $apiUrl
-     * @param \NoFraud\Connect\Order\Processor $orderProcessor
-     * @param \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection
-     * @param \Magento\Store\Model\StoreManagerInterface $storeManager
-     * @param \Magento\Sales\Model\Service\InvoiceService $invoiceService
-     * @param \Magento\Sales\Model\Order\CreditmemoFactory $creditmemoFactory
-     * @param \Magento\Sales\Model\Service\CreditmemoService $creditmemoService
-     * @param \Magento\Framework\Registry $registry
+     * @param \NoFraud\Connect\Helper\Config                                    $configHelper          Config Helper Object from module
+     * @param \NoFraud\Connect\Api\RequestHandler                               $requestHandler        Request Handler Object from module
+     * @param \NoFraud\Connect\Api\ResponseHandler                              $responseHandler       Response Handler Object from module
+     * @param \NoFraud\Connect\Logger\Logger                                    $logger                Logger Object from module
+     * @param \NoFraud\Connect\Api\ApiUrl                                       $apiUrl                ApiUrl Object from module
+     * @param \NoFraud\Connect\Order\Processor                                  $orderProcessor        Order Processor Object from module
+     * @param \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection Order Status Collection Object from Magento
+     * @param \Magento\Store\Model\StoreManagerInterface                        $storeManager          Store Manager Object from Magento
+     * @param \Magento\Sales\Model\Service\InvoiceService                       $invoiceService        Invoice Service Object from Magento
+     * @param \Magento\Sales\Model\Order\CreditmemoFactory                      $creditmemoFactory     Creditmemo Factory Object from Magento
+     * @param \Magento\Sales\Model\Service\CreditmemoService                    $creditmemoService     Creditmemo Service Object from Magento
+     * @param \Magento\Framework\Registry                                       $registry              Registry Object from Magento
      */
     public function __construct(
         \NoFraud\Connect\Helper\Config $configHelper,
@@ -100,7 +78,9 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
     /**
      * Place After Order event handler.
      *
-     * @param \Magento\Framework\Event\Observer $observer
+     * @param \Magento\Framework\Event\Observer $observer Observer Object from Magento
+     *
+     * @return void
      */
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
@@ -119,7 +99,7 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
         if ($order && $payment->getMethod() == 'nofraud') {
             return;
         }
-        
+
         if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
             return;
         }
@@ -198,7 +178,9 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
     /**
      * Get Payment Details From Method
      *
-     * @param mixed $payment
+     * @param mixed $payment Payment Object from Magento
+     *
+     * @return mixed
      */
     private function _getPaymentDetailsFromMethod($payment)
     {
@@ -214,7 +196,9 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
     /**
      * Get Payment Details From Stripe
      *
-     * @param mixed $payment
+     * @param mixed $payment Payment Object from Magento
+     *
+     * @return mixed
      */
     private function _getPaymentDetailsFromStripe($payment)
     {
