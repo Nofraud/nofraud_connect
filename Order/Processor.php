@@ -164,8 +164,11 @@ class Processor
                 $order->setState(Order::STATE_CANCELED);
                 $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
                 $order->save();
+
+                return true;
             }
         }
+        return false;
     }
 
     /**
