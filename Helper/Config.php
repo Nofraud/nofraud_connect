@@ -1,7 +1,21 @@
 <?php
-
+/** 
+ * This file is a helper class for the NoFraud Connect extension that handles
+ * the configuration settings for the extension.
+ * 
+ * @category Helper
+ * @package  NoFraud_Connect
+ * @link     https://nofraud.com
+ */
 namespace NoFraud\Connect\Helper;
 
+/**
+ * Config class for NoFraud Connect extension.
+ * 
+ * @category Class
+ * @package  NoFraud_Connect
+ * @link     https://nofraud.com
+ */
 class Config extends \Magento\Framework\App\Helper\AbstractHelper
 {
     private const GENERAL = 'nofraud_connect/general';
@@ -25,14 +39,8 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     private const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
 
-    /**
-     * @var $logger
-     */
     protected $logger;
 
-    /**
-     * @var $orderStatusesKeys
-     */
     protected $orderStatusesKeys = [
         'pass',
         'review',
@@ -43,8 +51,8 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Constructor
      *
-     * @param \Magento\Framework\App\Helper\Context $context
-     * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param \Magento\Framework\App\Helper\Context $context Context Object from Magento
+     * @param \NoFraud\Connect\Logger\Logger        $logger  Logger Object from module
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
@@ -57,8 +65,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Enabled
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getEnabled($storeId = null)
     {
@@ -68,8 +77,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Api Token
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getApiToken($storeId = null)
     {
@@ -79,8 +89,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Sandbox Mode
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getSandboxMode($storeId = null)
     {
@@ -104,6 +115,8 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * Get Nofruad Connect Mode
+     * 
+     * @return string
      */
     public function getNofraudAdvanceListMode()
     {
@@ -116,8 +129,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Screened Order Status
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return array
      */
     public function getScreenedOrderStatus($storeId = null)
     {
@@ -138,8 +152,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Auto Cancel
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getAutoCancel($storeId = null)
     {
@@ -149,8 +164,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Refund Online
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getRefundOnline($storeId = null)
     {
@@ -160,8 +176,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Order Status Pass
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getOrderStatusPass($storeId = null)
     {
@@ -171,8 +188,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Order Status Review
      *
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return string
      */
     public function getOrderStatusReview($storeId = null)
     {
@@ -182,9 +200,10 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Custom Status Config
      *
-     * @param mixed $statusName
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $statusName Magento Order Status Name
+     * @param mixed $storeId    Magento Store ID
+     * 
+     * @return string|null
      */
     public function getCustomStatusConfig($statusName, $storeId = null)
     {
@@ -199,9 +218,10 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Payment Method Is Ignored
      *
-     * @param mixed $method
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $method  Magento Payment Method
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return bool
      */
     public function paymentMethodIsIgnored($method, $storeId = null)
     {
@@ -220,9 +240,10 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Order Status Is Ignored
      *
-     * @param mixed $order
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $order   Magento Order Object
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return bool
      */
     public function orderStatusIsIgnored($order, $storeId = null)
     {
@@ -235,8 +256,10 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         $orderStatus = $order->getStatus();
         if (!in_array($orderStatus, $screenedOrderStatus)) {
             $orderId = $order->getIncrementId();
-            $this->logger->info("\n Ignoring Order $orderId: status is '$orderStatus;'
-             only screening orders with selected screen status.");
+            $this->logger->info(
+                "\n Ignoring Order $orderId: status is '$orderStatus;'
+             only screening orders with selected screen status."
+            );
             return true;
         }
         return false;
@@ -245,9 +268,10 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Config Value By StoreId
      *
-     * @param mixed $path
-     * @param mixed $storeId
-     * @return void
+     * @param mixed $path    Config Path
+     * @param mixed $storeId Magento Store ID
+     * 
+     * @return mixed
      */
     private function _getConfigValueByStoreId($path, $storeId)
     {
