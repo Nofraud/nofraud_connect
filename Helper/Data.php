@@ -1,5 +1,12 @@
 <?php
-
+/**
+ * This file is a helper class for the NoFraud Connect extension that handles
+ * the debug logging for the extension.
+ * 
+ * @category Helper
+ * @package  NoFraud_Connect
+ * @link     https://nofraud.com
+ */
 namespace NoFraud\Connect\Helper;
 
 use Magento\Framework\App\ObjectManager;
@@ -10,40 +17,32 @@ use Magento\Framework\Filesystem;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
 
+/**
+ * Data class for NoFraud Connect extension.
+ * 
+ * @category Class
+ * @package  NoFraud_Connect
+ * @link     https://nofraud.com
+ */
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
 
     private const XML_PATH_ORDER_DEBUG_ENABLED = "nofraud_connect/order_debug/debug";
-
-    /**
-     * @var \Magento\Framework\Filesystem\Directory\Write
-     */
-    protected $_directory;
-    /**
-     * @var ObjectManagerInterface
-     */
-    protected $objectManager;
-
-    /** @var File */
     private $file;
-    /**
-     * @var Filesystem
-     */
-    protected $filesystem;
 
-    /**
-     * @var WriteInterface
-     */
+    protected $_directory;
+    protected $objectManager;
+    protected $filesystem;
     protected $logDirectory;
 
     /**
      * Constructor
      *
-     * @param \Magento\Framework\App\Helper\Context $context
-     * @param \Magento\Framework\Filesystem\DirectoryList $directoryList
-     * @param ObjectManagerInterface $objectManager
-     * @param File $file
-     * @param Filesystem $filesystem
+     * @param \Magento\Framework\App\Helper\Context       $context       Context Object from Magento
+     * @param \Magento\Framework\Filesystem\DirectoryList $directoryList DirectoryList Object from Magento
+     * @param ObjectManagerInterface                      $objectManager ObjectManager Object from Magento 
+     * @param File                                        $file          File Object from Magento
+     * @param Filesystem                                  $filesystem    Filesystem Object from Magento
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
@@ -75,7 +74,9 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Log Data if enabled
      *
-     * @param mixed $data
+     * @param mixed $data Data to add to debug log
+     * 
+     * @return void
      */
     public function addDataToLog($data)
     {
