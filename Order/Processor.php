@@ -157,9 +157,8 @@ class Processor
     {
         // if order failed NoFraud check, try to refund and cancel order
         if ($decision == 'fail' || $decision == 'fraudulent') {
-            $this->refundOrder($order);
             // Handle custom cancel for Payment Method if needed
-            if (!$this->_runCustomAutoCancel($order)) {
+            if ($this->refundOrder($order) && !$this->_runCustomAutoCancel($order)) {
                 $order->cancel();
                 $order->setNofraudStatus($decision);
                 $order->setState(Order::STATE_CANCELED);
@@ -226,6 +225,7 @@ class Processor
                     }
                 } catch (\Exception $e) {
                     $this->logger->logRefundException($e, $order->getId());
+                    return false;
                 }
             }
         }
