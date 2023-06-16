@@ -2,7 +2,7 @@
 /**
  * This file is a helper class for the NoFraud Connect extension that handles
  * the debug logging for the extension.
- * 
+ *
  * @category Helper
  * @package  NoFraud_Connect
  * @link     https://nofraud.com
@@ -19,7 +19,7 @@ use Magento\Framework\Filesystem\Directory\WriteInterface;
 
 /**
  * Data class for NoFraud Connect extension.
- * 
+ *
  * @category Class
  * @package  NoFraud_Connect
  * @link     https://nofraud.com
@@ -40,7 +40,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @param \Magento\Framework\App\Helper\Context       $context       Context Object from Magento
      * @param \Magento\Framework\Filesystem\DirectoryList $directoryList DirectoryList Object from Magento
-     * @param ObjectManagerInterface                      $objectManager ObjectManager Object from Magento 
+     * @param ObjectManagerInterface                      $objectManager ObjectManager Object from Magento
      * @param File                                        $file          File Object from Magento
      * @param Filesystem                                  $filesystem    Filesystem Object from Magento
      */
@@ -75,7 +75,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * Log Data if enabled
      *
      * @param mixed $data Data to add to debug log
-     * 
+     *
      * @return void
      */
     public function addDataToLog($data)
