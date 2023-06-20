@@ -119,7 +119,7 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
         if ($order && $payment->getMethod() == 'nofraud') {
             return;
         }
-        
+
         if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
             return;
         }
@@ -185,7 +185,15 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
                 $nofraudDecision = $resultMap['http']['response']['body']['decision'];
                 if ($nofraudDecision != 'fail' || $nofraudDecision != "fraudulent") {
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                    if (isset($nofraudDecision) && ($nofraudDecision == 'pass')) {
+                        if (!empty($newStatus)) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                        } else {
+                            $order->setNofraudStatus($resultMap['http']['response']['body']['decision']);
+                        }
+                    } else {
+                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                    }
                 }
             }
             // Finally, save order

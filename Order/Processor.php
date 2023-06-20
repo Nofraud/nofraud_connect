@@ -98,7 +98,7 @@ class Processor
         }
 
         if (isset($response['code'])) {
-            if ($response['code'] > 299) {
+            if ($response['code'] > 299 || isset($response['body']['Errors'])) {
                 $statusName = 'error';
             }
         }
@@ -120,14 +120,16 @@ class Processor
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
             if ($newState == Order::STATE_HOLDED) {
+                $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} is on hold");
                 $order->hold();
             } elseif ($newState) {
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
-                $noFraudresponse = $response['http']['response']['body']['decision'];
+                $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
                     $order->setNofraudStatus($response['http']['response']['body']['decision']);
                 }
             }
+            $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} is in state {$newState}");
         }
     }
 
@@ -157,16 +159,19 @@ class Processor
     {
         // if order failed NoFraud check, try to refund and cancel order
         if ($decision == 'fail' || $decision == 'fraudulent') {
-            $this->refundOrder($order);
+            $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
             // Handle custom cancel for Payment Method if needed
-            if (!$this->_runCustomAutoCancel($order)) {
+            if ($this->refundOrder($order) && !$this->_runCustomAutoCancel($order)) {
                 $order->cancel();
                 $order->setNofraudStatus($decision);
                 $order->setState(Order::STATE_CANCELED);
                 $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
                 $order->save();
+
+                return true;
             }
         }
+        return false;
     }
 
     /**
@@ -214,18 +219,26 @@ class Processor
         $storeId = $this->storeManager->getStore()->getId();
         $isOffline = $order->getPayment()->getMethodInstance()->isOffline();
         // If payment method is online, attempt online refund if enabled
+        $this->dataHelper->addDataToLog("Refunding Order#" . $order->getIncrementId());
         $isRefundOnline = $this->configHelper->getRefundOnline($storeId);
+        $this->dataHelper->addDataToLog("Refund Online: " . $isRefundOnline);
         if (isset($isOffline) && !$isOffline && $isRefundOnline) {
+            $this->dataHelper->addDataToLog("Attempting Online Refund for Order#" . $order->getIncrementId());
             $invoices = $order->getInvoiceCollection();
             foreach ($invoices as $invoice) {
                 try {
+                    $this->dataHelper->addDataToLog("Invoice can refund: " . $invoice->canRefund());
+                    $this->dataHelper->addDataToLog("Invoice can void: " . $invoice->canVoid());
                     if ($invoice->canRefund()) {
                         $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
                     } elseif ($invoice->canVoid()) {
                         $invoice->void();
+                    } else {
+                        return false;
                     }
                 } catch (\Exception $e) {
                     $this->logger->logRefundException($e, $order->getId());
+                    return false;
                 }
             }
         }
