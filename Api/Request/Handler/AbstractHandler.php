@@ -42,6 +42,7 @@ class AbstractHandler
         $this->_curl->setOption(CURLOPT_RETURNTRANSFER, 1);
         $errorMessage = "";
         try {
+            $this->_curl->addHeader('Expect:',":");
             if (!strcasecmp($requestType, 'post')) {
                 $this->_curl->post($apiUrl, json_encode($params));
             } else {

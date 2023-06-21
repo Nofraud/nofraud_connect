@@ -113,8 +113,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $logger = new \Zend_Log();
             $logger->addWriter($writer);
         }
-        if ($data && is_string($data)) {
-            $logger->info($data);
+        if ($data && is_array($data)) {
+            $logger->info(print_r($data,true));
         } else {
             $logger->info($data);
         }
