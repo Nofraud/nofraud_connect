@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Nofraud/nofraud_connect/compare/v1.0.0...v1.0.1) (2023-06-30)
+
+
+### Bug Fixes
+
+* include version in composer.json to allow for FE display ([a9013ed](https://github.com/Nofraud/nofraud_connect/commit/a9013ed23bc383e7e53871c7c7894f211da10e4b))
+
 # 1.0.0 (2023-06-20)
 
 
