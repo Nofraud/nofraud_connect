@@ -13,15 +13,19 @@ jobs:
         with:
           fetch-depth: 0
       - name: Check for releasable commit messages 
+        id: check_commit_messages
         run: |
           commits=$(git log --pretty=format:"%s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
           if [[ $commits =~ "fix" || $commits =~ "feat" ]]; then
             echo "Commit messages contain 'fix' or 'feat'. Running file check..."
+            echo "::set-output name=is_release::true"
           else
             echo "Skipping further checks as this PR would not generate a release."
+            echo "::set-output name=is_release::false"
             exit 0
           fi
       - name: Check Version Key Update
+        if: steps.check_commit_messages.outputs.is_release == 'true'
         id: check_version_changes
         run: |
           changed_lines=$(git diff -r --unified=0 ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- composer.json | grep -c "version")
