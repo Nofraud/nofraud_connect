@@ -12,8 +12,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Get changes 
+      - name: Check for releasable commit messages 
         run: |
-          echo $(git log --pretty=format:"%s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          commits=$(git log --pretty=format:"%s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          if [[ $commits =~ "fix" || $commits =~ "feat" ]]; then
+            echo "Commit messages contain 'fix' or 'feat'. Running key check..."
+          else
+            echo "Skipping key check as commit messages do not contain 'fix' or 'feat'."
+            exit 0
+          fi
 
 
