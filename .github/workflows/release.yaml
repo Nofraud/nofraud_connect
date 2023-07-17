@@ -19,7 +19,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: "lts/*"
-      - run: npm install -g semantic-release @semantic-release/github @semantic-release/git @semantic-release/changelog
+      - run: npm install -g semantic-release @semantic-release/github @semantic-release/git @semantic-release/changelog @iwavesmedia/semantic-release-composer
       - run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE }}
