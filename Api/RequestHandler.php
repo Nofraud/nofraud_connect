@@ -486,12 +486,18 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
             case self::PARADOXLABS_CIM_METHOD_CODE:
                 $avs = $payment->getCcAvsStatus();
                 $cid = $payment->getCcCidStatus();
+                $bin = $info['cc_bin'] ?? null;
 
                 if (!is_string($cid) && $cid instanceof Element) {
                     $cid = $cid->asArray();
                 }
 
                 $params = [
+                    "payment" => [
+                        "creditCard" => [
+                            "bin" => $bin,
+                        ],
+                    ],
                     "avsResultCode" => $avs,
                     "cvvResultCode" => $cid,
                 ];
