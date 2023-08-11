@@ -10,6 +10,11 @@ class AbstractHandler
     protected $logger;
 
     /**
+     * @var \Magento\Framework\HTTP\Client\Curl $curl
+     */
+    protected $_curl;
+
+    /**
      * AbstractHandler constructor.
      * @param \NoFraud\Connect\Logger\Logger $logger
      * @param \Magento\Framework\HTTP\Client\Curl $curl

@@ -37,6 +37,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $logDirectory;
 
     /**
+     * @var DirectoryList
+     */
+    protected $directoryList;
+
+    /**
      * Constructor
      *
      * @param \Magento\Framework\App\Helper\Context $context
