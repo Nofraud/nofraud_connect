@@ -20,6 +20,10 @@ class OrderFraudStatus
      */
     private $requestHandler;
     /**
+     * @var DataHelper
+     */
+    private $dataHelper;
+    /**
      * @var ConfigHelper
      */
     private $configHelper;
