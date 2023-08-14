@@ -23,6 +23,10 @@ class NotifyNofauad
      */
     protected $transportBuilder;
     /**
+     * @var orderCollectionFactory
+     */
+    protected $orderCollectionFactory;
+    /**
      * @var inlineTranslation
      */
     protected $inlineTranslation;
