@@ -157,6 +157,17 @@ class OrderFraudStatus
                                 }
                                 continue;
                             }
+                        } else {
+                            if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
+                                    if (!empty($newStatus)) {
+                                        $this->dataHelper->addDataToLog("Updating Order#" . $order['increment_id'] . " to " . $newStatus);
+                                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                                    }
+                                    $order->setNofraudStatus($decision);
+                                    $order->save();
+                                }
+                                continue;
+                            }
                         }
                         if (isset($decision) && ($decision == 'pass')) {
                             if (!empty($newStatus)) {
