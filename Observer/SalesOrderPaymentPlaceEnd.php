@@ -184,17 +184,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
                 $nofraudDecision = $resultMap['http']['response']['body']['decision'] ?? "";
                 if (isset($nofraudDecision) && !empty($nofraudDecision)) {
                     $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
-                    if (isset($nofraudDecision) && ($nofraudDecision == 'error')) {
-                        if (!empty($newStatus)) {
-                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
-                        }
-                    }
-                    if (isset($nofraudDecision) && ($nofraudDecision == 'pass')) {
-                        if (!empty($newStatus)) {
-                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
-                        }
-                    }
-                    if (isset($nofraudDecision) && ($nofraudDecision == 'review')) {
+                    if (!empty($newStatus)) {
                         $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
                     }
                 } else {
@@ -212,10 +202,8 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             $order->save();
 
             // If order fails screening and auto-cancel is enabled in admin config, cancel the order
-            if ($this->configHelper->getAutoCancel($storeId)) {
-                if (isset($nofraudDecision) && $nofraudDecision == 'fail') {
-                    $this->orderProcessor->handleAutocancel($order, $nofraudDecision);
-                }
+            if ($this->configHelper->getAutoCancel($storeId) && isset($nofraudDecision) && $nofraudDecision == 'fail') {
+                $this->orderProcessor->handleAutocancel($order, $nofraudDecision);
             }
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);
