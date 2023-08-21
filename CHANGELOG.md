@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Nofraud/nofraud_connect/compare/v1.0.1...v1.0.2) (2023-08-21)
+
+
+### Bug Fixes
+
+* Make Extension Compatible With Dynamic Property Deprecation in PHP 8.2 ([#33](https://github.com/Nofraud/nofraud_connect/issues/33)) ([6968aa0](https://github.com/Nofraud/nofraud_connect/commit/6968aa004805f60989a6c6970da9e45f08b11a93))
+
 ## [1.0.1](https://github.com/Nofraud/nofraud_connect/compare/v1.0.0...v1.0.1) (2023-06-30)
 
 
