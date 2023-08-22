@@ -5,7 +5,7 @@ namespace NoFraud\Connect\Cron;
 class OrderFraudStatus
 {
     private const ORDER_REQUEST = 'status';
-    private const REQUEST_TYPE  = 'GET';
+    private const REQUEST_TYPE = 'GET';
 
     /**
      * @var Orders
@@ -103,7 +103,7 @@ class OrderFraudStatus
             ->addFieldToSelect('nofraud_transaction_id')
             ->setOrder('status', 'desc');
 
-        $orderStatusReview   = $this->configHelper->getOrderStatusReview($storeId);
+        $orderStatusReview = $this->configHelper->getOrderStatusReview($storeId);
         $screenedOrderStatus = $this->configHelper->getScreenedOrderStatus($storeId);
         $orderStatusToScreen = "'" . implode("','", $screenedOrderStatus) . "'";
 
@@ -163,41 +163,40 @@ class OrderFraudStatus
                             }
                         } else {
                             if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
-                                    if (!empty($newStatus)) {
-                                        $this->dataHelper->addDataToLog("Updating Order#" . $order['increment_id'] . " to " . $newStatus);
-                                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                                    }
-                                    $order->setNofraudStatus($decision);
-                                    $order->save();
+                                if (!empty($newStatus)) {
+                                    $this->dataHelper->addDataToLog("Updating Order#" . $order['increment_id'] . " to " . $newStatus);
+                                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
                                 }
-                                continue;
-                            }
-                        }
-                        if (isset($decision) && ($decision == 'pass')) {
-                            if (!empty($newStatus)) {
-                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                            } else {
                                 $order->setNofraudStatus($decision);
+                                $order->save();
                             }
-                            $order->save();
                             continue;
                         }
-                        if (isset($decision) && ($decision == 'review')) {
+                    }
+                    if (isset($decision) && ($decision == 'pass')) {
+                        if (!empty($newStatus)) {
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                        } else {
+                            $order->setNofraudStatus($decision);
+                        }
+                        $order->save();
+                        continue;
+                    }
+                    if (isset($decision) && ($decision == 'review')) {
+                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+                    }
+                } else {
+                    $nofraudErrorDecision = $response['http']['response']['body']['Errors'] ?? "";
+                    $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
+                    if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
+                        if (empty($newStatus)) {
+                            $order->setNofraudStatus('Error');
+                        } else {
                             $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
                         }
-                    } else {
-                        $nofraudErrorDecision = $response['http']['response']['body']['Errors'] ?? "";
-                        $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                        if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
-                            if (empty($newStatus)) {
-                                $order->setNofraudStatus('Error');
-                            } else {
-                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                            }
-                        }
                     }
-                    $order->save();
                 }
+                $order->save();
             } catch (\Exception $exception) {
                 $this->dataHelper->addDataToLog("Error for Order#" . $order['increment_id']);
                 $this->dataHelper->addDataToLog($exception->getMessage());
