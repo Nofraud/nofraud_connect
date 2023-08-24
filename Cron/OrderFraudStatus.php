@@ -123,78 +123,37 @@ class OrderFraudStatus
      */
     public function updateOrdersFromNoFraudApiResult($orders, $storeId)
     {
+        // Construct the base API URL for fetching order status
         $apiUrl = $this->apiUrl->buildOrderApiUrl(self::ORDER_REQUEST, $this->configHelper->getApiToken($storeId));
+
+        // Process each eligible order from the db.
         foreach ($orders as $order) {
+            // Check if the order was processed through the Checkout app and skip if so.
             if ($order && $order->getPayment()->getMethod() == 'nofraud') {
                 continue;
             }
             try {
+                // Create the specific URL for fetching status of current order.
                 $orderSpecificApiUrl = $apiUrl . '/' . $order['increment_id'];
+                // Fetch the status from the API for the current order.
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
                 $this->dataHelper->addDataToLog($response);
-                if (isset($response['http']['response']['body'])) {
-                    $decision = $response['http']['response']['body']['decision'] ?? "";
-                    if (isset($decision) && !empty($decision)) {
-                        $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                        if (isset($decision) && ($decision == 'error')) {
-                            if (empty($newStatus)) {
-                                $order->setNofraudStatus($decision);
-                            } else {
-                                $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                            }
-                            $order->save();
-                            continue;
-                        }
-                        if ($this->configHelper->getAutoCancel($storeId)) {
-                            if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
-                                $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order['increment_id']);
-                                // If auto-cancel fails, then update the order status to the configured status
-                                if (!$this->orderProcessor->handleAutoCancel($order, $decision)) {
-                                    $this->dataHelper->addDataToLog("Auto-cancel failed for Order#" . $order['increment_id']);
-                                    if (!empty($newStatus)) {
-                                        $this->dataHelper->addDataToLog("Updating Order#" . $order['increment_id'] . " to " . $newStatus);
-                                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                                    }
 
-                                    $order->setNofraudStatus($decision);
-                                    $order->save();
-                                }
-                                continue;
-                            }
-                        } else {
-                            if (isset($decision) && ($decision == 'fail' || $decision == "fraudulent")) {
-                                if (!empty($newStatus)) {
-                                    $this->dataHelper->addDataToLog("Updating Order#" . $order['increment_id'] . " to " . $newStatus);
-                                    $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                                }
-                                $order->setNofraudStatus($decision);
-                                $order->save();
-                            }
-                            continue;
-                        }
-                    }
-                    if (isset($decision) && ($decision == 'pass')) {
-                        if (!empty($newStatus)) {
-                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                        } else {
-                            $order->setNofraudStatus($decision);
-                        }
-                        $order->save();
-                        continue;
-                    }
-                    if (isset($decision) && ($decision == 'review')) {
-                        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                    }
+                // Check if the response contains the necessary data, skip order if it does not
+                if (!isset($response['http']['response']['body'])) {
+                    continue;
+                }
+
+                // Extract new decision from the response.
+                $decision = $response['http']['response']['body']['decision'] ?? "";
+                // Translate the decision into a status based on the configuration.
+                $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
+
+                // If a decision was returned by the API, handle it, else handle error.
+                if ($decision) {
+                    $this->handleDecisionBasedUpdates($order, $decision, $newStatus, $response, $storeId);
                 } else {
-                    $nofraudErrorDecision = $response['http']['response']['body']['Errors'] ?? "";
-                    $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
-                    if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
-                        if (empty($newStatus)) {
-                            $order->setNofraudStatus('Error');
-                        } else {
-                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
-                        }
-                    }
+                    $this->handleNoFraudError($order, $newStatus, $response);
                 }
                 $order->save();
             } catch (\Exception $exception) {
@@ -202,5 +161,136 @@ class OrderFraudStatus
                 $this->dataHelper->addDataToLog($exception->getMessage());
             }
         }
+    }
+
+    /**
+     * Processes the decision from the NoFraud API and updates the order accordingly.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $decision  The decision made by the NoFraud API.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param array  $response  The full response from the NoFraud API.
+     * @param int    $storeId   The store's ID.
+     * @return void
+     */
+    private function handleDecisionBasedUpdates($order, $decision, $newStatus, $response, $storeId)
+    {
+        // Based on the decision from the API, take the appropriate action.
+        switch ($decision) {
+            case 'error':
+                $this->handleErrorDecision($order, $newStatus, $decision, $response);
+                break;
+            case 'fail':
+            case 'fraudulent':
+                $this->handleFailDecision($order, $newStatus, $decision, $response, $storeId);
+                break;
+            case 'pass':
+                $this->handlePassDecision($order, $newStatus, $decision, $response);
+                break;
+            case 'review':
+                $this->handleReviewDecision($order, $newStatus, $response);
+                break;
+            default:
+                $this->dataHelper->addDataToLog("Unknown decision: {$decision}");
+                $this->updateOrderStatus($order, $newStatus, $response, "Error");
+                break;
+        }
+    }
+
+    /**
+     * Handles when the NoFraud API decision is 'error'.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param string $decision  The decision made by the NoFraud API.
+     * @param array  $response  The full response from the NoFraud API.
+     * @return void
+     */
+    private function handleErrorDecision($order, $newStatus, $decision, $response)
+    {
+        $this->updateOrderStatus($order, $newStatus, $response, $decision);
+    }
+    /**
+     * Handles when the NoFraud API decision is 'fail' or 'fraudulent'.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param string $decision  The decision made by the NoFraud API.
+     * @param array  $response  The full response from the NoFraud API.
+     * @param int    $storeId   The store's ID.
+     * @return void
+     */
+    private function handleFailDecision($order, $newStatus, $decision, $response, $storeId)
+    {
+        // First, update the order status to the configured status.
+        $this->updateOrderStatus($order, $newStatus, $response, $decision);
+
+        // Next, check if auto-cancel is enabled and if so, attempt to cancel the order.
+        if ($this->configHelper->getAutoCancel($storeId)) {
+            $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order['increment_id']);
+            if ($this->orderProcessor->handleAutoCancel($order, $decision)) {
+                $this->dataHelper->addDataToLog("Auto-cancel successful for Order#" . $order['increment_id']);
+            } else {
+                $this->dataHelper->addDataToLog("Auto-cancel failed for Order#" . $order['increment_id']);
+            }
+        }
+    }
+    /**
+     * Handles when the NoFraud API decision is 'pass'.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param string $decision  The decision made by the NoFraud API.
+     * @param array  $response  The full response from the NoFraud API.
+     * @return void
+     */
+    private function handlePassDecision($order, $newStatus, $decision, $response)
+    {
+        $this->updateOrderStatus($order, $newStatus, $response, $decision);
+    }
+    /**
+     * Handles when the NoFraud API decision is 'review'.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param array  $response  The full response from the NoFraud API.
+     * @return void
+     */
+    private function handleReviewDecision($order, $newStatus, $response)
+    {
+        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+    }
+    /**
+     * Handles cases when there's an error in the NoFraud response.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param array  $response  The full response from the NoFraud API.
+     * @return void
+     */
+    private function handleNofraudError($order, $newStatus, $response)
+    {
+        $nofraudErrorDecision = $response['http']['response']['body']['Errors'] ?? "";
+        if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
+            $this->updateOrderStatus($order, $newStatus, $response, "Error");
+        }
+    }
+    /**
+     * Updates the order's status and logs the transition.
+     *
+     * @param object $order     The order to be updated.
+     * @param string $newStatus The proposed new status for the order based on the decision.
+     * @param array  $response  The full response from the NoFraud API.
+     * @param string $decision  The decision made by the NoFraud API.
+     */
+    private function updateOrderStatus($order, $newStatus, $response, $decision)
+    {
+        if (!empty($newStatus)) {
+            $this->dataHelper->addDataToLog("Transitioning Order {$order->getIncrementId()} to status {$newStatus}");
+            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+        }
+
+        $order->setNofraudStatus($decision);
+        $order->save();
     }
 }

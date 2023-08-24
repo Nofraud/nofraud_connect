@@ -129,7 +129,7 @@ class Processor
                     $order->setNofraudStatus($response['http']['response']['body']['decision']);
                 }
             }
-            $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} is in state {$newState}");
+
         }
     }
 
