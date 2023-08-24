@@ -95,6 +95,9 @@ class Processor
     {
         if (isset($response['body']['decision'])) {
             $statusName = $response['body']['decision'];
+            if ($statusName == 'fraudulent') {
+                $statusName = 'fail';
+            }
         }
 
         if (isset($response['code'])) {
