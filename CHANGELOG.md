@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/Nofraud/nofraud_connect/compare/v1.0.2...v1.1.0) (2023-08-31)
+
+
+### Bug Fixes
+
+* Set fraudulent status orders to configured decision for fail ([aa92ad8](https://github.com/Nofraud/nofraud_connect/commit/aa92ad8e3068e9d9b55d3dbc3e7620bf63829558))
+* Update order status for failed orders when auto-cancel is disabled ([#36](https://github.com/Nofraud/nofraud_connect/issues/36)) ([0bb3820](https://github.com/Nofraud/nofraud_connect/commit/0bb3820e3cc4442ea133406a94cdf711f6a7c550))
+
+
+### Features
+
+* Fetch BIN for ParadoxLabs Auth.NET CIM ([71d2bd7](https://github.com/Nofraud/nofraud_connect/commit/71d2bd746998de7e8ef72f2bed84c61ce8601e2d))
+
 ## [1.0.2](https://github.com/Nofraud/nofraud_connect/compare/v1.0.1...v1.0.2) (2023-08-21)
 
 
