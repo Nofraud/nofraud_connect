@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:noNamespaceSchemaLocation="../../../../../lib/internal/Magento/Framework/ObjectManager/etc/config.xsd">
+    <preference for="Magento\Sales\Controller\Adminhtml\Order\VoidPayment" type="NoFraud\Connect\Controller\Adminhtml\Order\VoidPayment" />
+    <preference for="Magento\Sales\Controller\Adminhtml\Order\Creditmemo\Save" type="NoFraud\Connect\Controller\Adminhtml\Order\Creditmemo\Save" />
+</config>
