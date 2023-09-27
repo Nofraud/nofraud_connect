@@ -421,12 +421,11 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
         $separatorComa = strpos($value, ',');
         $separatorDot  = strpos($value, '.');
+        $price         = $value;
 
         if ($separatorComa !== false && $separatorDot !== false) {
             if ($separatorComa > $separatorDot) {
                 $price = preg_replace("/(\d+)\.(\d+),(\d+)/", "$1,$2.$3", $value);
-            } else {
-                $price = $value;
             }
         } elseif ($separatorComa !== false) {
             $locale = $this->_localeResolver->getLocale();
@@ -441,9 +440,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
                 '.',
                 ','
             );
-        } else {
-            $price = str_replace(",", ".", $value);
-        }
+        } 
         return $price;
     }
 
