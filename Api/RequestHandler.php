@@ -45,6 +45,13 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     ];
 
     /**
+     * Japan locale code
+     */
+    private const JAPAN_LOCALE_CODE = 'ja_JP';
+
+    protected $_localeResolver;
+
+    /**
      * Constructor
      *
      * @param \NoFraud\Connect\Logger\Logger $logger
@@ -60,7 +67,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         \Magento\Directory\Model\Currency $currency,
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         \Magento\Customer\Model\Customer $customer,
-        \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory
+        \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory,
+        \Magento\Framework\Locale\ResolverInterface $localeResolver
     ) {
 
         parent::__construct($logger, $curl);
@@ -69,6 +77,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $this->customerRepository = $customerRepository;
         $this->customer = $customer;
         $this->orderCollectionFactory = $orderCollectionFactory;
+        $this->_localeResolver = $localeResolver;
     }
 
     /**
@@ -407,8 +416,32 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         if (empty($amount)) {
             return;
         }
+        
+        $value = $this->currency->formatTxt($amount, ['display' => \Magento\Framework\Currency::NO_SYMBOL]);
 
-        return $this->currency->formatTxt($amount, ['display' => \Magento\Framework\Currency::NO_SYMBOL]);
+        $separatorComa = strpos($value, ',');
+        $separatorDot  = strpos($value, '.');
+        $price         = $value;
+
+        if ($separatorComa !== false && $separatorDot !== false) {
+            if ($separatorComa > $separatorDot) {
+                $price = preg_replace("/(\d+)\.(\d+),(\d+)/", "$1,$2.$3", $value);
+            }
+        } elseif ($separatorComa !== false) {
+            $locale = $this->_localeResolver->getLocale();
+
+            /**
+             * It's hard code for Japan locale.
+             */
+            $price = number_format(
+                (float)
+                str_replace(',', $locale === self::JAPAN_LOCALE_CODE ? '' : '.', $value),
+                2,
+                '.',
+                ','
+            );
+        } 
+        return $price;
     }
 
     /**
