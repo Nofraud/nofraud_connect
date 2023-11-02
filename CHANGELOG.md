@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Nofraud/nofraud_connect/compare/v1.1.0...v1.2.0) (2023-11-02)
+
+
+### Features
+
+* Add support for currency internationalization ([#39](https://github.com/Nofraud/nofraud_connect/issues/39)) ([0186921](https://github.com/Nofraud/nofraud_connect/commit/01869215d33d9675501296d4c30cb28e3b0ae8eb))
+
 # [1.1.0](https://github.com/Nofraud/nofraud_connect/compare/v1.0.2...v1.1.0) (2023-08-31)
 
 
