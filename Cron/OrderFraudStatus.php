@@ -146,6 +146,13 @@ class OrderFraudStatus
 
                 // Extract new decision from the response.
                 $decision = $response['http']['response']['body']['decision'] ?? "";
+
+                // If the decision has not changed, skip the order.
+                if ($decision == 'review') {
+                    $this->dataHelper->addDataToLog("Decision has not changed for Order#" . $order['increment_id']);
+                    continue;
+                }
+
                 // Translate the decision into a status based on the configuration.
                 $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
 
