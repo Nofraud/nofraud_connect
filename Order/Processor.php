@@ -123,9 +123,11 @@ class Processor
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
             if ($newState == Order::STATE_HOLDED) {
-                $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} is on hold");
-                $order->hold();
+                $this->holdOrder($order);
             } elseif ($newState) {
+                // Unhold order if it is currently on hold and new state is not hold
+                $this->unholdOrder($order);
+
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
                 $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
@@ -246,5 +248,43 @@ class Processor
             }
         }
         return true;
+    }
+
+    /**
+     * Hold Order
+     *
+     * @param mixed $order
+     */
+    private function holdOrder($order)
+    {
+        if ($order->canHold()) {
+            $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} is able to be put on hold");
+            try {
+                $order->hold()->save();
+                $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} has been put on hold");
+            } catch (\Exception $e) {
+                $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} could not be put on hold");
+                $this->dataHelper->addDataToLog($e->getMessage());
+            }
+        }
+    }
+
+    /**
+     * Unhold Order
+     *
+     * @param mixed $order
+     */
+    private function unholdOrder($order)
+    {
+        if ($order->canUnhold()) {
+            $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} is able to be taken off hold");
+            try {
+                $order->unhold()->save();
+                $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} has been taken off hold");
+            } catch (\Exception $e) {
+                $this->dataHelper->addDataToLog("Order {$order->getIncrementId()} could not be taken off hold");
+                $this->dataHelper->addDataToLog($e->getMessage());
+            }
+        }
     }
 }

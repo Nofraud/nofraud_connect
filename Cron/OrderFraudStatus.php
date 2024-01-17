@@ -101,6 +101,7 @@ class OrderFraudStatus
             ->addFieldToSelect('entity_id')
             ->addFieldToSelect('nofraud_status')
             ->addFieldToSelect('nofraud_transaction_id')
+            ->addFieldToSelect('state')
             ->setOrder('status', 'desc');
 
         $orderStatusReview = $this->configHelper->getOrderStatusReview($storeId);
