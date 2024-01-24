@@ -95,8 +95,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $params['customer'] = $this->buildCustomerParams($order);
         $params['order']    = $this->buildOrderParams($order);
         $params['payment']  = $this->buildPaymentParams($payment);
-        $params['billTo']   = $this->buildAddressParams($order->getBillingAddress(), true);
-        $params['shipTo']   = $this->buildAddressParams($order->getShippingAddress());
+        $params['billTo']   = $this->buildAddressParams($order->getBillingAddress(), $order, true);
+        $params['shipTo']   = $this->buildAddressParams($order->getShippingAddress(), $order, false, true);
         $params['lineItems'] = $this->buildLineItemsParams($order->getItems());
 
         $paramsAdditionalInfo = $this->buildParamsAdditionalInfo($payment);
@@ -346,10 +346,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      * Build Address Params
      *
      * @param mixed $address
+     * @param mixed $order
      * @param boolean $includePhoneNumber
+     * @param boolean $includeShipping
      * @return void
      */
-    protected function buildAddressParams($address, $includePhoneNumber = false)
+    protected function buildAddressParams($address, $order, $includePhoneNumber = false, $includeShipping = false)
     {
         if (empty($address)) {
             return;
@@ -368,6 +370,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
         if ($includePhoneNumber) {
             $addressParams['phoneNumber'] = $address->getTelephone();
+        }
+
+        if ($includeShipping) {
+            $addressParams['shippingMethod'] = $order->getShippingDescription();
         }
 
         return $addressParams;
