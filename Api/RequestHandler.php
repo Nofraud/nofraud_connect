@@ -353,11 +353,11 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      */
     protected function buildAddressParams($address, $order, $includePhoneNumber = false, $includeShipping = false)
     {
-        if (empty($address)) {
-            return;
-        }
-
         $addressParams = [];
+
+        if (empty($address)) {
+            return $addressParams;
+        }
 
         $addressParams['firstName'] = $address->getFirstname();
         $addressParams['lastName']  = $address->getLastname();
