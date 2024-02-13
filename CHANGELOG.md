@@ -1,3 +1,11 @@
+## [1.2.1](https://github.com/Nofraud/nofraud_connect/compare/v1.2.0...v1.2.1) (2024-02-13)
+
+
+### Bug Fixes
+
+* Add check for order's ability to be held, implement try-catch for hold operation, and improve logging ([d76d8e1](https://github.com/Nofraud/nofraud_connect/commit/d76d8e1483bd7db89d2ef4e5d36fe2123cda512d))
+* **cron:** Do not update review order if decision hasn't yet been rendered ([43487aa](https://github.com/Nofraud/nofraud_connect/commit/43487aa5c02bf7a9be7f3bb16aa86c61af130c23))
+
 # [1.2.0](https://github.com/Nofraud/nofraud_connect/compare/v1.1.0...v1.2.0) (2023-11-02)
 
 
