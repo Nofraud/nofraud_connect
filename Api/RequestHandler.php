@@ -123,6 +123,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $baseParams['shippingAmount'] = $this->formatTotal($order->getShippingAmount());
         $baseParams['avsResultCode']  = self::DEFAULT_AVS_CODE;
         $baseParams['cvvResultCode']  = self::DEFAULT_CVV_CODE;
+        $baseParams['shippingMethod'] = $order->getShippingMethod() ?? null;
 
         if (empty($order->getXForwardedFor())) {
             $baseParams['customerIP'] = $order->getRemoteIp();
