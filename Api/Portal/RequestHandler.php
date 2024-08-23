@@ -1,13 +1,13 @@
 <?php
- 
+
 namespace NoFraud\Connect\Api\Portal;
- 
+
 use org\bovigo\vfs\DirectoryIterationTestCase;
 
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
     private const TRANSACTION_STATUS_ENDPOINT = 'status_by_invoice';
-    
+
     /**
      * Build
      *

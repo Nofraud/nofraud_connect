@@ -7,12 +7,13 @@ use NoFraud\Connect\Logger\Logger;
 
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
-    private const DEFAULT_AVS_CODE                    = 'U';
-    private const DEFAULT_CVV_CODE                    = 'U';
-    private const BRAINTREE_CODE                      = 'braintree';
+    private const DEFAULT_AVS_CODE = 'U';
+    private const DEFAULT_CVV_CODE = 'U';
+    private const BRAINTREE_CODE = 'braintree';
     private const MAGEDELIGHT_AUTHNET_CIM_METHOD_CODE = 'md_authorizecim';
-    private const PARADOXLABS_CIM_METHOD_CODE         = 'authnetcim';
-    private const PL_MI_METHOD_CODE                   = 'nmi_directpost';
+    private const PARADOXLABS_CIM_METHOD_CODE = 'authnetcim';
+    private const PL_MI_METHOD_CODE = 'nmi_directpost';
+    private $versionHelper;
 
     /**
      * @var Currency
@@ -68,7 +69,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         \Magento\Customer\Model\Customer $customer,
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory,
-        \Magento\Framework\Locale\ResolverInterface $localeResolver
+        \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \NoFraud\Connect\Helper\Version $versionHelper
     ) {
 
         parent::__construct($logger, $curl);
@@ -78,6 +80,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $this->customer = $customer;
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->_localeResolver = $localeResolver;
+        $this->versionHelper = $versionHelper;
     }
 
     /**
@@ -91,12 +94,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      */
     public function build($payment, $order, $apiToken)
     {
-        $params             = $this->buildBaseParams($payment, $order, $apiToken);
+        $params = $this->buildBaseParams($payment, $order, $apiToken);
         $params['customer'] = $this->buildCustomerParams($order);
-        $params['order']    = $this->buildOrderParams($order);
-        $params['payment']  = $this->buildPaymentParams($payment);
-        $params['billTo']   = $this->buildAddressParams($order->getBillingAddress(), true);
-        $params['shipTo']   = $this->buildAddressParams($order->getShippingAddress());
+        $params['order'] = $this->buildOrderParams($order);
+        $params['payment'] = $this->buildPaymentParams($payment);
+        $params['billTo'] = $this->buildAddressParams($order->getBillingAddress(), true);
+        $params['shipTo'] = $this->buildAddressParams($order->getShippingAddress());
         $params['lineItems'] = $this->buildLineItemsParams($order->getItems());
 
         $paramsAdditionalInfo = $this->buildParamsAdditionalInfo($payment);
@@ -117,12 +120,20 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     {
         $baseParams = [];
 
-        $baseParams['nf-token']       = $apiToken;
-        $baseParams['amount']         = $this->formatTotal($order->getGrandTotal());
-        $baseParams['currency_code']  = $order->getOrderCurrencyCode();
+        $baseParams['app'] = 'Magento M2 Plugin';
+
+        try {
+            $baseParams['version'] = $this->versionHelper->getVersion();
+        } catch (\Exception $e) {
+            $baseParams['version'] = '';
+        }
+
+        $baseParams['nf-token'] = $apiToken;
+        $baseParams['amount'] = $this->formatTotal($order->getGrandTotal());
+        $baseParams['currency_code'] = $order->getOrderCurrencyCode();
         $baseParams['shippingAmount'] = $this->formatTotal($order->getShippingAmount());
-        $baseParams['avsResultCode']  = self::DEFAULT_AVS_CODE;
-        $baseParams['cvvResultCode']  = self::DEFAULT_CVV_CODE;
+        $baseParams['avsResultCode'] = self::DEFAULT_AVS_CODE;
+        $baseParams['cvvResultCode'] = self::DEFAULT_CVV_CODE;
 
         if (empty($order->getXForwardedFor())) {
             $baseParams['customerIP'] = $order->getRemoteIp();
@@ -215,11 +226,11 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         return $this->orderCollectionFactory->create(
             $customerId
         )->addFieldToSelect(
-            '*'
-        )->setOrder(
-            'created_at',
-            'desc'
-        )->getItems();
+                '*'
+            )->setOrder(
+                'created_at',
+                'desc'
+            )->getItems();
     }
 
     /**
@@ -247,10 +258,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     {
         $cc = [];
 
-        $cc['cardType']       = $this->formatCcType($payment->getCcType());
-        $cc['cardNumber']     = $payment->getCcNumber();
+        $cc['cardType'] = $this->formatCcType($payment->getCcType());
+        $cc['cardNumber'] = $payment->getCcNumber();
         $cc['expirationDate'] = $this->buildCcExpDate($payment);
-        $cc['cardCode']       = $payment->getCcCid();
+        $cc['cardCode'] = $payment->getCcCid();
 
         if ($last4 = $this->decryptLast4($payment)) {
             $cc['last4'] = $last4;
@@ -316,7 +327,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $expYear = $payment->getCcExpYear();
 
         // Pad a one-digit month with a 0;
-        if (isset($expMonth) && !empty($expMonth)){
+        if (isset($expMonth) && !empty($expMonth)) {
             if (strlen($expMonth) == 1) {
                 $expMonth = "0" . $expMonth;
             }
@@ -330,7 +341,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         // NoFraud requires an expiration year;
         // If year is invalid, return nothing;
         // Else if year is four digits (1999), truncate it to two (99);
-        if (isset($expYear) && !empty($expYear)){
+        if (isset($expYear) && !empty($expYear)) {
             if (strlen($expYear) > 4) {
                 return;
             } elseif (strlen($expYear) == 4) {
@@ -358,13 +369,13 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $addressParams = [];
 
         $addressParams['firstName'] = $address->getFirstname();
-        $addressParams['lastName']  = $address->getLastname();
-        $addressParams['company']   = $address->getCompany();
-        $addressParams['address']   = implode(' ', $address->getStreet());
-        $addressParams['city']      = $address->getCity();
-        $addressParams['state']     = $address->getRegionCode();
-        $addressParams['zip']       = $address->getPostcode();
-        $addressParams['country']   = $address->getCountryId();
+        $addressParams['lastName'] = $address->getLastname();
+        $addressParams['company'] = $address->getCompany();
+        $addressParams['address'] = implode(' ', $address->getStreet());
+        $addressParams['city'] = $address->getCity();
+        $addressParams['state'] = $address->getRegionCode();
+        $addressParams['zip'] = $address->getPostcode();
+        $addressParams['country'] = $address->getCountryId();
 
         if ($includePhoneNumber) {
             $addressParams['phoneNumber'] = $address->getTelephone();
@@ -394,9 +405,9 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
             $lineItem = [];
 
-            $lineItem['sku']      = $item->getSku();
-            $lineItem['name']     = $item->getName();
-            $lineItem['price']    = $this->formatTotal($item->getPrice());
+            $lineItem['sku'] = $item->getSku();
+            $lineItem['name'] = $item->getName();
+            $lineItem['price'] = $this->formatTotal($item->getPrice());
             $lineItem['quantity'] = $item->getQtyOrdered();
 
             $lineItemsParams[] = $lineItem;
@@ -416,12 +427,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         if (empty($amount)) {
             return;
         }
-        
+
         $value = $this->currency->formatTxt($amount, ['display' => \Magento\Framework\Currency::NO_SYMBOL]);
 
         $separatorComa = strpos($value, ',');
-        $separatorDot  = strpos($value, '.');
-        $price         = $value;
+        $separatorDot = strpos($value, '.');
+        $price = $value;
 
         if ($separatorComa !== false && $separatorDot !== false) {
             if ($separatorComa > $separatorDot) {
@@ -434,13 +445,13 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
              * It's hard code for Japan locale.
              */
             $price = number_format(
-                (float)
+                (float) 
                 str_replace(',', $locale === self::JAPAN_LOCALE_CODE ? '' : '.', $value),
                 2,
                 '.',
                 ','
             );
-        } 
+        }
         return $price;
     }
 
@@ -464,10 +475,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
             case \Magento\Paypal\Model\Config::METHOD_PAYFLOWPRO:
                 $last4 = $info['cc_details']['cc_last_4'] ?? null;
-                $sAvs  = $info['avsaddr']   ?? null; // AVS Street Address Match
-                $zAvs  = $info['avszip']    ?? null; // AVS Zip Code Match
-                $iAvs  = $info['iavs']      ?? null; // International AVS Response
-                $cvv   = $info['cvv2match'] ?? null;
+                $sAvs = $info['avsaddr'] ?? null; // AVS Street Address Match
+                $zAvs = $info['avszip'] ?? null; // AVS Zip Code Match
+                $iAvs = $info['iavs'] ?? null; // International AVS Response
+                $cvv = $info['cvv2match'] ?? null;
 
                 $params = [
                     "payment" => [
@@ -482,16 +493,16 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
                 break;
 
             case self::BRAINTREE_CODE:
-                $last4    = substr($info['cc_number'] ?? [], -4);
+                $last4 = substr($info['cc_number'] ?? [], -4);
                 $cardType = $info['cc_type'] ?? null;
-                $sAvs     = $info['avsStreetAddressResponseCode'] ?? null; // AVS Street Address Match
-                $zAvs     = $info['avsPostalCodeResponseCode']    ?? null; // AVS Zip Code Match
-                $cvv      = $info['cvvResponseCode'] ?? null;
+                $sAvs = $info['avsStreetAddressResponseCode'] ?? null; // AVS Street Address Match
+                $zAvs = $info['avsPostalCodeResponseCode'] ?? null; // AVS Zip Code Match
+                $cvv = $info['cvvResponseCode'] ?? null;
 
                 $params = [
                     "payment" => [
                         "creditCard" => [
-                            "last4"    => $last4,
+                            "last4" => $last4,
                             "cardType" => $cardType,
                         ],
                     ],
