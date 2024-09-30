@@ -13,6 +13,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     private const MAGEDELIGHT_AUTHNET_CIM_METHOD_CODE = 'md_authorizecim';
     private const PARADOXLABS_CIM_METHOD_CODE = 'authnetcim';
     private const PL_MI_METHOD_CODE = 'nmi_directpost';
+    private const CYBERSOURCE_METHOD_CODE = 'chcybersource';
     private $versionHelper;
 
     /**
@@ -560,6 +561,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
                 break;
 
+            case self::CYBERSOURCE_METHOD_CODE:
+                $params = $this->handleCybersource($info);
+                break;
+
             default:
                 $params = [];
                 break;
@@ -567,4 +572,31 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
         return $this->scrubEmptyValues($params);
     }
+
+    /**
+     * Extract the BIN, AVS and CVV codes from Cybersource
+     * @param array $info
+     * @return array
+     */
+    private function handleCybersource(array $info): array
+    {
+        $avs = $info['auth_avs_code'] ?? $info['ccAuthReply_avsCode'] ?? self::DEFAULT_AVS_CODE;
+        $cid = $info['auth_cv_result'] ?? self::DEFAULT_CVV_CODE;
+        $bin = $info['afsReply_cardBin']
+            ?? (isset($info['cardNumber']) ? substr($info['cardNumber'], 0, 6) : null)
+            ?? (isset($info['maskedPan']) ? substr($info['maskedPan'], 0, 6) : null);
+
+        $params = [
+            "payment" => [
+                "creditCard" => [
+                    "bin" => $bin,
+                ],
+            ],
+            "avsResultCode" => $avs,
+            "cvvResultCode" => $cid,
+        ];
+
+        return $this->scrubEmptyValues($params);
+    }
 }
+
