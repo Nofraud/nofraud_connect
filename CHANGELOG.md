@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/Nofraud/nofraud_connect/compare/v1.2.1...v1.3.0) (2024-09-30)
+
+
+### Features
+
+* App app and version to NFAPI call. ([70a065d](https://github.com/Nofraud/nofraud_connect/commit/70a065d32a850a9d2ccf0b1b1a5b38d359cae8e8))
+
 ## [1.2.1](https://github.com/Nofraud/nofraud_connect/compare/v1.2.0...v1.2.1) (2024-02-13)
 
 
