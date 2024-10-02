@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Nofraud/nofraud_connect/compare/v1.3.0...v1.4.0) (2024-10-02)
+
+
+### Features
+
+* Extract AVS, CVV and BIN from cybersource. ([c9a9eb8](https://github.com/Nofraud/nofraud_connect/commit/c9a9eb89bc63fef931f6dc22f9725ffc86b3cd74))
+
 # [1.3.0](https://github.com/Nofraud/nofraud_connect/compare/v1.2.1...v1.3.0) (2024-09-30)
 
 
