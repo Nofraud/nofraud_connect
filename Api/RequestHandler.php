@@ -140,8 +140,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
             $baseParams['customerIP'] = $order->getRemoteIp();
         } else {
             //get original customer Ip address (in case customer is being routed through proxies)
-            //Syntax: X-Forwarded-For: <client>, <proxy1>, <proxy2>
-            $ips = array_filter(explode(', ', $order->getXForwardedFor()));
+            $xForwardedFor = str_replace(' ', '', $order->getXForwardedFor());
+            $ips = explode(',', $xForwardedFor);
             $baseParams['customerIP'] = $ips[0];
         }
 
