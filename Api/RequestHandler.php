@@ -135,15 +135,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $baseParams['shippingAmount'] = $this->formatTotal($order->getShippingAmount());
         $baseParams['avsResultCode'] = self::DEFAULT_AVS_CODE;
         $baseParams['cvvResultCode'] = self::DEFAULT_CVV_CODE;
-
-        if (empty($order->getXForwardedFor())) {
-            $baseParams['customerIP'] = $order->getRemoteIp();
-        } else {
-            //get original customer Ip address (in case customer is being routed through proxies)
-            $xForwardedFor = str_replace(' ', '', $order->getXForwardedFor());
-            $ips = explode(',', $xForwardedFor);
-            $baseParams['customerIP'] = $ips[0];
-        }
+        $baseParams['customerIP'] = $this->getIpAddress($order);
 
         if (!empty($payment->getCcAvsStatus())) {
             $baseParams['avsResultCode'] = $payment->getCcAvsStatus();
@@ -154,6 +146,34 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         }
 
         return $baseParams;
+    }
+
+    /**
+     * Get IP Address
+     *
+     * @param \Magento\Sales\Model\Order $order
+     * @return string
+     */
+    private function getIpAddress($order): string
+    {
+        if (empty($order->getXForwardedFor())) {
+            return $this->parseIpString($order->getRemoteIp());
+        } else {
+            return $this->parseIpString($order->getXForwardedFor());
+        }
+    }
+
+    /**
+     * Parse IP String
+     *
+     * @param string $ipString
+     * @return string
+     */
+    private function parseIpString($ipString): string
+    {
+        $ipString = str_replace(' ', '', $ipString);
+        $ips = explode(',', $ipString);
+        return $ips[0];
     }
 
     /**
