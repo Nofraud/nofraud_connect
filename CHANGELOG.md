@@ -1,3 +1,11 @@
+## [1.4.1](https://github.com/Nofraud/nofraud_connect/compare/v1.4.0...v1.4.1) (2024-11-11)
+
+
+### Bug Fixes
+
+* Apply parsing to remote ip as well for safety. ([03b2e89](https://github.com/Nofraud/nofraud_connect/commit/03b2e89f7623b962bce0576bf1150af22c38e747))
+* Refine IP extraction from X-Forwarded-For header ([01f04e7](https://github.com/Nofraud/nofraud_connect/commit/01f04e7425ef900da11bfefd79632743535058ef))
+
 # [1.4.0](https://github.com/Nofraud/nofraud_connect/compare/v1.3.0...v1.4.0) (2024-10-02)
 
 
