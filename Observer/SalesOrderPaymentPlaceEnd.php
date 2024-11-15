@@ -241,7 +241,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
             $this->logger->logMessage(self::LOG_PAYMENT_IGNORED, $order);
             if (!$this->_registry->registry('afterOrderSaveNoFraudSkipRecorded')) {
-                $this->notesHelper->addNoteToOrder($order, "Payment method is ignored");
+                $this->notesHelper->addNoteToOrder($order, self::COMMENT_PAYMENT_IGNORED);
             }
             return false;
         }
@@ -268,7 +268,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
             $this->logger->logMessage(self::LOG_STATUS_IGNORED, $order);
             if (!$skipStatusCommentAdded) {
-                $order->addStatusHistoryComment(self::COMMENT_STATUS_IGNORED);
+                $this->notesHelper->addNoteToOrder($order, self::COMMENT_STATUS_IGNORED);
             }
             return true;
         }
@@ -278,7 +278,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         if ($this->configHelper->shouldSkipCustomerGroup($customerGroupId, $storeId)) {
             $this->logger->logMessage("Skipping as customer group '$customerGroupId' is ignored", $order);
             if (!$skipStatusCommentAdded) {
-                $order->addStatusHistoryComment(self::COMMENT_CUSTOMER_GROUP_IGNORED);
+                $this->notesHelper->addNoteToOrder($order, self::COMMENT_CUSTOMER_GROUP_IGNORED);
             }
             return true;
         }
