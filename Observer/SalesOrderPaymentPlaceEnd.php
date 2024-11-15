@@ -112,12 +112,23 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
         // If payment method is blacklisted in the admin config, do nothing
         $payment = $observer->getEvent()->getPayment();
-        if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
+
+        if (!$payment) {
             return;
         }
 
-        // If order's status is ignored in admin config, do nothing
         $order = $payment->getOrder();
+
+        if (!$order) {
+            $this->logger->logMessage("No order found for payment");
+            return;
+        }
+
+        if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
+            $this->logger->logMessage("Payment method is ignored", $order);
+            $order->addStatusHistoryComment("NoFraud: Payment method is ignored");
+            return;
+        }
 
         // If transcation happen through nofraud checkout iframe, do nothing
         if ($order && $payment->getMethod() == 'nofraud') {
@@ -125,6 +136,8 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         }
 
         if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
+            $this->logger->logMessage("Order status is ignored", $order);
+            $order->addStatusHistoryComment("NoFraud: Order status is ignored");
             return;
         }
 
