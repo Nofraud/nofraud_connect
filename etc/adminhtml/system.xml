@@ -68,13 +68,6 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                         <field id="nofraud_connect/general/auto_cancel">1</field>
                     </depends>
                 </field>
-                <field id="skip_customer_group" translate="label" type="multiselect"
-                    sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Skip Customer Group</label>
-                    <source_model>NoFraud\Connect\Model\Config\Source\CustomerGroup</source_model>
-                    <can_be_empty>1</can_be_empty>
-                    <comment>Orders from selected customer groups will be skipped from screening.</comment>
-                </field>
             </group>
             <group id="order_statuses" translate="label" type="text" 
             sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
