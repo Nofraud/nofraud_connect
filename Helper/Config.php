@@ -246,20 +246,14 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         return false;
     }
 
-    public function shouldSkipCustomerGroup($order, $storeId = null)
+    public function shouldSkipCustomerGroup($customerGroupId, $storeId = null)
     {
         $skipCustomerGroups = $this->_getSkipCustomerGroups($storeId);
-        $orderId = $order->getIncrementId();
-        $customerGroupId = $order->getCustomerGroupId();
 
         if (empty($skipCustomerGroups)) {
             return false;
         }
         if (in_array($customerGroupId, $skipCustomerGroups)) {
-            $order->addStatusHistoryComment("Order skipped: customer group '$customerGroupId' is in the skip list.");
-            $order->setNofraudStatus('skip');
-            $order->save();
-            $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
             return true;
         }
         return false;

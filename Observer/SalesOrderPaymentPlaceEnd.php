@@ -29,6 +29,10 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
      */
     protected $orderProcessor;
     /**
+     * @var NotesHelper
+     */
+    protected $notesHelper;
+    /**
      * @var OrderStatusCollection
      */
     protected $orderStatusCollection;
@@ -53,6 +57,22 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
      */
     protected $_registry;
 
+    // Status Constants
+    private const NOFRAUD_STATUS_SKIP = 'skip';
+
+    // Payment Method Constants
+    private const PAYMENT_METHOD_NOFRAUD = 'nofraud';
+
+    // Logging Messages
+    private const LOG_PAYMENT_IGNORED = "Payment method is ignored";
+    private const LOG_NO_ORDER_FOUND = "No order found for payment";
+    private const LOG_STATUS_IGNORED = "Order status is ignored";
+
+    // Comments
+    private const COMMENT_STATUS_IGNORED = "Order status is ignored";
+    private const COMMENT_PAYMENT_IGNORED = "Payment method is ignored";
+    private const COMMENT_CUSTOMER_GROUP_IGNORED = "Customer group is ignored";
+
     /**
      * Constructor
      *
@@ -62,6 +82,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
      * @param \NoFraud\Connect\Logger\Logger $logger
      * @param \NoFraud\Connect\Api\ApiUrl $apiUrl
      * @param \NoFraud\Connect\Order\Processor $orderProcessor
+     * @param \NoFraud\Connect\Helper\Notes $notesHelper
      * @param \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Sales\Model\Service\InvoiceService $invoiceService
@@ -76,6 +97,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         \NoFraud\Connect\Logger\Logger $logger,
         \NoFraud\Connect\Api\ApiUrl $apiUrl,
         \NoFraud\Connect\Order\Processor $orderProcessor,
+        \NoFraud\Connect\Helper\Notes $notesHelper,
         \Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory $orderStatusCollection,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Sales\Model\Service\InvoiceService $invoiceService,
@@ -89,6 +111,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         $this->logger = $logger;
         $this->apiUrl = $apiUrl;
         $this->orderProcessor = $orderProcessor;
+        $this->notesHelper = $notesHelper;
         $this->orderStatusCollection = $orderStatusCollection;
         $this->storeManager = $storeManager;
         $this->invoiceService = $invoiceService;
@@ -110,7 +133,6 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             return;
         }
 
-        // If payment method is blacklisted in the admin config, do nothing
         $payment = $observer->getEvent()->getPayment();
 
         if (!$payment) {
@@ -119,29 +141,8 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
         $order = $payment->getOrder();
 
-        if (!$order) {
-            $this->logger->logMessage("No order found for payment");
-            return;
-        }
-
-        if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
-            $this->logger->logMessage("Payment method is ignored", $order);
-            $order->addStatusHistoryComment("NoFraud: Payment method is ignored");
-            return;
-        }
-
-        // If transcation happen through nofraud checkout iframe, do nothing
-        if ($order && $payment->getMethod() == 'nofraud') {
-            return;
-        }
-
-        if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
-            $this->logger->logMessage("Order status is ignored", $order);
-            $order->addStatusHistoryComment("NoFraud: Order status is ignored");
-            return;
-        }
-
-        if ($this->configHelper->shouldSkipCustomerGroup($order, $storeId)) {
+        if ($this->shouldSkipOrderProcessing($order, $storeId) || !$this->isPaymentValid($order, $payment, $storeId)) {
+            $this->markOrderAsSkipped($order);
             return;
         }
 
@@ -225,6 +226,64 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         } catch (\Exception $exception) {
             $this->logger->logFailure($order, $exception);
         }
+    }
+
+    private function markOrderAsSkipped($order)
+    {
+        $this->_registry->register('afterOrderSaveNoFraudSkipRecorded', true);
+        $order->setNofraudStatus(self::NOFRAUD_STATUS_SKIP);
+        $order->save();
+    }
+
+    private function isPaymentValid($order, $payment, $storeId): bool
+    {
+        // If payment method is ignored, do nothing
+        if ($this->configHelper->paymentMethodIsIgnored($payment->getMethod(), $storeId)) {
+            $this->logger->logMessage(self::LOG_PAYMENT_IGNORED, $order);
+            if (!$this->_registry->registry('afterOrderSaveNoFraudSkipRecorded')) {
+                $this->notesHelper->addNoteToOrder($order, "Payment method is ignored");
+            }
+            return false;
+        }
+
+        // If transcation happen through nofraud checkout iframe, do nothing
+        if ($payment->getMethod() == self::PAYMENT_METHOD_NOFRAUD) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function shouldSkipOrderProcessing($order, $storeId)
+    {
+        // If order is not found, do nothing
+        if (!$order) {
+            $this->logger->logMessage(self::LOG_NO_ORDER_FOUND);
+            return true;
+        }
+
+        $skipStatusCommentAdded = $this->_registry->registry('afterOrderSaveNoFraudSkipRecorded');
+
+        // If order status is ignored, do nothing
+        if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
+            $this->logger->logMessage(self::LOG_STATUS_IGNORED, $order);
+            if (!$skipStatusCommentAdded) {
+                $order->addStatusHistoryComment(self::COMMENT_STATUS_IGNORED);
+            }
+            return true;
+        }
+
+        // If customer group is ignored, do nothing
+        $customerGroupId = $order->getCustomerGroupId();
+        if ($this->configHelper->shouldSkipCustomerGroup($customerGroupId, $storeId)) {
+            $this->logger->logMessage("Skipping as customer group '$customerGroupId' is ignored", $order);
+            if (!$skipStatusCommentAdded) {
+                $order->addStatusHistoryComment(self::COMMENT_CUSTOMER_GROUP_IGNORED);
+            }
+            return true;
+        }
+
+        return false;
     }
 
     /**

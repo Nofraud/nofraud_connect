@@ -89,7 +89,12 @@ class Logger extends \Monolog\Logger
 
     public function logMessage($message, $order): void
     {
-        $orderId = $order->getIncrementId();
+        if (!$order) {
+            $orderId = $order->getIncrementId();
+        } else {
+            $orderId = 'N/A';
+        }
+
         $this->info("Order $orderId: $message");
     }
 }
