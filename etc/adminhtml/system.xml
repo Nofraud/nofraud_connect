@@ -109,9 +109,22 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                     <source_model>NoFraud\Connect\Model\Config\Source\NoFraudOrderStatus</source_model>
                 </field>
             </group>
+
+            <group id="skip_config" translate="label" type="text" 
+            sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Skip Configuration</label>
+                <comment>Orders that meet the selected criteria will be skipped from screening.</comment>
+                <field id="skip_customer_group" translate="label" type="multiselect"
+                    sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Skip Customer Group</label>
+                    <source_model>NoFraud\Connect\Model\Config\Source\CustomerGroup</source_model>
+                    <can_be_empty>1</can_be_empty>
+                    <comment>Orders from selected customer groups will be skipped from screening. You may select multiple groups via ctrl + left click</comment>
+                </field>
+            </group>
             
             <group id="order_email_review" translate="label" type="text" 
-            sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+            sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Order Pending Review Email Configuration</label>          
                 <field id="enabled" translate="label" type="select" 
                 sortOrder="0" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
@@ -149,7 +162,7 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                     <source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
                 </field>
             </group>
-            <group id="order_debug" translate="label" type="text" sortOrder="40"
+            <group id="order_debug" translate="label" type="text" sortOrder="50"
              showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Advanced Nofraud Connect Settings</label>
                 <field id="debug" translate="label" type="select" sortOrder="40" 

@@ -6,6 +6,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 {
     private const GENERAL = 'nofraud_connect/general';
     private const ORDER_STATUSES = 'nofraud_connect/order_statuses';
+    private const SKIP_CONFIG = 'nofraud_connect/skip_config';
 
     private const ORDER_STATUSES_PASS = self::ORDER_STATUSES . '/pass';
     private const ORDER_STATUSES_REVIEW = self::ORDER_STATUSES . '/review';
@@ -16,7 +17,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
     private const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
     private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
-    private const GENERAL_SKIP_CUSTOMER_GROUPS = self::GENERAL . '/skip_customer_group';
+    private const SKIP_CONFIG_SKIP_CUSTOMER_GROUPS = self::SKIP_CONFIG . '/skip_customer_group';
 
     private const PRODUCTION_URL = "https://api.nofraud.com/";
 
@@ -255,6 +256,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             return false;
         }
         if (in_array($customerGroupId, $skipCustomerGroups)) {
+            $order->addStatusHistoryComment("Order skipped: customer group '$customerGroupId' is in the skip list.");
             $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
             return true;
         }
@@ -263,7 +265,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     private function _getSkipCustomerGroups($storeId = null): array
     {
-        $skipCustomerGroups = $this->_getConfigValueByStoreId(self::GENERAL_SKIP_CUSTOMER_GROUPS, $storeId);
+        $skipCustomerGroups = $this->_getConfigValueByStoreId(self::SKIP_CONFIG_SKIP_CUSTOMER_GROUPS, $storeId);
         if (empty($skipCustomerGroups)) {
             return [];
         }

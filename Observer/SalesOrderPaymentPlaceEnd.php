@@ -128,7 +128,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
             return;
         }
 
-        if ($this->configHelper->shouldSkipCustomerGroup($order->getCustomerGroupId(), $storeId)) {
+        if ($this->configHelper->shouldSkipCustomerGroup($order, $storeId)) {
             return;
         }
 
