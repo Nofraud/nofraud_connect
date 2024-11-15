@@ -6,6 +6,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 {
     private const GENERAL = 'nofraud_connect/general';
     private const ORDER_STATUSES = 'nofraud_connect/order_statuses';
+    private const SKIP_CONFIG = 'nofraud_connect/skip_config';
 
     private const ORDER_STATUSES_PASS = self::ORDER_STATUSES . '/pass';
     private const ORDER_STATUSES_REVIEW = self::ORDER_STATUSES . '/review';
@@ -16,10 +17,11 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
     private const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
     private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
+    private const SKIP_CONFIG_SKIP_CUSTOMER_GROUPS = self::SKIP_CONFIG . '/skip_customer_group';
 
     private const PRODUCTION_URL = "https://api.nofraud.com/";
 
-    private const SANDBOX_URL    = "https://apitest.nofraud.com/";
+    private const SANDBOX_URL = "https://apitest.nofraud.com/";
 
     private const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
 
@@ -242,6 +244,34 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
         return false;
+    }
+
+    public function shouldSkipCustomerGroup($order, $storeId = null)
+    {
+        $skipCustomerGroups = $this->_getSkipCustomerGroups($storeId);
+        $orderId = $order->getIncrementId();
+        $customerGroupId = $order->getCustomerGroupId();
+
+        if (empty($skipCustomerGroups)) {
+            return false;
+        }
+        if (in_array($customerGroupId, $skipCustomerGroups)) {
+            $order->addStatusHistoryComment("Order skipped: customer group '$customerGroupId' is in the skip list.");
+            $order->setNofraudStatus('skip');
+            $order->save();
+            $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
+            return true;
+        }
+        return false;
+    }
+
+    private function _getSkipCustomerGroups($storeId = null): array
+    {
+        $skipCustomerGroups = $this->_getConfigValueByStoreId(self::SKIP_CONFIG_SKIP_CUSTOMER_GROUPS, $storeId);
+        if ($skipCustomerGroups === null || $skipCustomerGroups === '') {
+            return [];
+        }
+        return explode(',', $skipCustomerGroups);
     }
 
     /**
