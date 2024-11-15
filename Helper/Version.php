@@ -18,15 +18,12 @@ class Version extends \Magento\Framework\App\Helper\AbstractHelper
      *
      * @param DirReader $dirReader
      * @param \Magento\Framework\App\Helper\Context $context
-     * @param \NoFraud\Connect\Logger\Logger $logger
      */
     public function __construct(
         DirReader $dirReader,
         \Magento\Framework\App\Helper\Context $context,
-        \NoFraud\Connect\Logger\Logger $logger
     ) {
         parent::__construct($context);
-        $this->logger = $logger;
         $this->dirReader = $dirReader;
     }
 
