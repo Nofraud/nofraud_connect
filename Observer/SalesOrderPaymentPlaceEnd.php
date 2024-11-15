@@ -123,8 +123,12 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         if ($order && $payment->getMethod() == 'nofraud') {
             return;
         }
-        
+
         if ($this->configHelper->orderStatusIsIgnored($order, $storeId)) {
+            return;
+        }
+
+        if ($this->configHelper->shouldSkipCustomerGroup($order->getCustomerGroupId(), $storeId)) {
             return;
         }
 
@@ -168,7 +172,7 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
 
             // Prepare order data from result map
             $data = $this->responseHandler->getTransactionData($resultMap);
-    
+
             // For all API responses (official results from NoFraud, client errors, etc.),
             // add an informative comment to the order in Magento admin
             $comment = $data['comment'];

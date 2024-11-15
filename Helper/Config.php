@@ -16,10 +16,11 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
     private const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
     private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
+    private const GENERAL_SKIP_CUSTOMER_GROUPS = self::GENERAL . '/skip_customer_group';
 
     private const PRODUCTION_URL = "https://api.nofraud.com/";
 
-    private const SANDBOX_URL    = "https://apitest.nofraud.com/";
+    private const SANDBOX_URL = "https://apitest.nofraud.com/";
 
     private const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
 
@@ -242,6 +243,31 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             }
         }
         return false;
+    }
+
+    public function shouldSkipCustomerGroup($order, $storeId = null)
+    {
+        $skipCustomerGroups = $this->_getSkipCustomerGroups($storeId);
+        $orderId = $order->getIncrementId();
+        $customerGroupId = $order->getCustomerGroupId();
+
+        if (empty($skipCustomerGroups)) {
+            return false;
+        }
+        if (in_array($customerGroupId, $skipCustomerGroups)) {
+            $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
+            return true;
+        }
+        return false;
+    }
+
+    private function _getSkipCustomerGroups($storeId = null): array
+    {
+        $skipCustomerGroups = $this->_getConfigValueByStoreId(self::GENERAL_SKIP_CUSTOMER_GROUPS, $storeId);
+        if (empty($skipCustomerGroups)) {
+            return [];
+        }
+        return explode(',', $skipCustomerGroups);
     }
 
     /**
