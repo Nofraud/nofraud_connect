@@ -257,6 +257,8 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
         }
         if (in_array($customerGroupId, $skipCustomerGroups)) {
             $order->addStatusHistoryComment("Order skipped: customer group '$customerGroupId' is in the skip list.");
+            $order->setNofraudStatus('skip');
+            $order->save();
             $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
             return true;
         }
