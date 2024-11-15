@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/Nofraud/nofraud_connect/compare/v1.4.1...v1.4.2) (2024-11-15)
+
+
+### Bug Fixes
+
+* Remove dynamic property. ([f3b7186](https://github.com/Nofraud/nofraud_connect/commit/f3b7186b6acb074ae3ec4938839b21d4730891cd))
+
 ## [1.4.1](https://github.com/Nofraud/nofraud_connect/compare/v1.4.0...v1.4.1) (2024-11-11)
 
 
