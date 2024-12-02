@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Nofraud/nofraud_connect/compare/v1.4.2...v1.5.0) (2024-12-02)
+
+
+### Features
+
+* Add setting to skip screening for orders based on customer group ([63f53a9](https://github.com/Nofraud/nofraud_connect/commit/63f53a976e507b19744facebed15e5b7eefab6ea))
+
 ## [1.4.2](https://github.com/Nofraud/nofraud_connect/compare/v1.4.1...v1.4.2) (2024-11-15)
 
 
