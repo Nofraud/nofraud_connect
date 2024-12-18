@@ -12,45 +12,34 @@ class Info extends \Magento\Framework\Logger\Handler\Base
     protected $loggerType = \Monolog\Logger::INFO;
 
     /**
-     * Default log file path (static file name).
+     * File name
      * @var string
      */
-    protected $fileName = '/var/log/nofraud_connect/info.log';
-
+    public $fileName = '';
     /**
-     * Filesystem driver for writing logs.
-     * 
-     * @var DriverInterface
+     * File name
+     * @var string
      */
-    protected $filesystemDriver;
+    public $cutomfileName = 'NO_PATH';
+    /**
+     * @var TimezoneInterface
+     */
+    protected $_localeDate;
 
     public function __construct(
-        DriverInterface $filesystemDriver
+        DriverInterface $filesystem,
+        \Magento\Framework\Filesystem $corefilesystem,
+        $filePath = null
     ) {
-        $this->filesystemDriver = $filesystemDriver;
-        parent::__construct($filesystemDriver);
-    }
+        $corefilesystem = $corefilesystem->getDirectoryWrite(\Magento\Framework\App\Filesystem\DirectoryList::VAR_DIR);
+        $logpath = $corefilesystem->getAbsolutePath('log/');
 
-    /**
-     * Override write() to use dynamic date logic for log file.
-     * 
-     * @param array $record
-     */
-    protected function write(array $record): void
-    {
-        $dynamicFileName = '/var/log/nofraud_connect/' . date("d-m-Y") . '.log';
-
-        // Ensure the directory exists
-        $directory = dirname($dynamicFileName);
-        if (!$this->filesystemDriver->isDirectory($directory)) {
-            $this->filesystemDriver->createDirectory($directory, 0755);
-        }
-
-        // Write to the dynamically resolved log file
-        $this->filesystemDriver->filePutContents(
-            $dynamicFileName,
-            $record['formatted'],
-            FILE_APPEND
+        $filename = 'nofraud_connect/' . date("m-d-Y") . '.log';
+        $filepath = $logpath . $filename;
+        $this->cutomfileName = $filepath;
+        parent::__construct(
+            $filesystem,
+            $filepath
         );
     }
 }
