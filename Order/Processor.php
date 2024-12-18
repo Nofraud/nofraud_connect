@@ -47,6 +47,10 @@ class Processor
      * @var InvoiceRepositoryInterface
      */
     protected $invoiceRepositoryInterface;
+    /**
+     * @var \NoFraud\Connect\Service\InvoiceService
+     */
+    protected $customInvoiceService;
 
     private const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
 
@@ -62,6 +66,7 @@ class Processor
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface
      * @param \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
+     * @param \NoFraud\Connect\Service\InvoiceService $customInvoiceService
      */
     public function __construct(
         \NoFraud\Connect\Logger\Logger $logger,
@@ -72,7 +77,8 @@ class Processor
         \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface,
-        \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
+        \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface,
+        \NoFraud\Connect\Service\InvoiceService $customInvoiceService,
     ) {
         $this->logger = $logger;
         $this->dataHelper = $dataHelper;
@@ -83,6 +89,7 @@ class Processor
         $this->storeManager = $storeManager;
         $this->refundInvoiceInterface = $refundInvoiceInterface;
         $this->invoiceRepositoryInterface = $invoiceRepositoryInterface;
+        $this->customInvoiceService = $customInvoiceService;
     }
 
     /**
@@ -131,6 +138,8 @@ class Processor
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
                 $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
+                    // If order passes screening, create an invoice
+                    $this->customInvoiceService->createInvoice($order);
                     $order->setNofraudStatus($response['http']['response']['body']['decision']);
                 }
             }
