@@ -83,7 +83,7 @@ class Logger extends \Monolog\Logger
      */
     public function logRefundException($exception, $orderNumber)
     {
-        $this->critical('We could not process the refund for order number'. $orderNumber .'for the following reasons:');
+        $this->critical('We could not process the refund for order number ' . $orderNumber . ' for the following reasons:');
         $this->critical($exception->getMessage());
     }
 }

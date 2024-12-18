@@ -47,6 +47,10 @@ class Processor
      * @var InvoiceRepositoryInterface
      */
     protected $invoiceRepositoryInterface;
+    /**
+     * @var \NoFraud\Connect\Service\InvoiceService
+     */
+    protected $nofraudInvoiceService;
 
     private const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
 
@@ -62,6 +66,7 @@ class Processor
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface
      * @param \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
+     * @param \NoFraud\Connect\Service\InvoiceService $nofraudInvoiceService
      */
     public function __construct(
         \NoFraud\Connect\Logger\Logger $logger,
@@ -72,7 +77,8 @@ class Processor
         \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface,
-        \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
+        \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface,
+        \NoFraud\Connect\Service\InvoiceService $nofraudInvoiceService,
     ) {
         $this->logger = $logger;
         $this->dataHelper = $dataHelper;
@@ -83,6 +89,7 @@ class Processor
         $this->storeManager = $storeManager;
         $this->refundInvoiceInterface = $refundInvoiceInterface;
         $this->invoiceRepositoryInterface = $invoiceRepositoryInterface;
+        $this->nofraudInvoiceService = $nofraudInvoiceService;
     }
 
     /**
@@ -118,7 +125,7 @@ class Processor
      * @param mixed $order
      * @param mixed $response
      */
-    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response)
+    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response, bool $isCron = false)
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
@@ -131,7 +138,9 @@ class Processor
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
                 $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
-                    $order->setNofraudStatus($response['http']['response']['body']['decision']);
+                    $order->setNofraudStatus($noFraudresponse);
+                    $order->save();
+                    $this->nofraudInvoiceService->createInvoice($order, $isCron);
                 }
             }
 
@@ -236,13 +245,16 @@ class Processor
                     $this->dataHelper->addDataToLog("Invoice can void: " . $invoice->canVoid());
                     if ($invoice->canRefund()) {
                         $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
+                        $order->addStatusHistoryComment("NoFraud triggered refund of invoice {$invoice->getIncrementId()}")->save();
                     } elseif ($invoice->canVoid()) {
                         $invoice->void();
+                        $order->addStatusHistoryComment("NoFraud triggered void of invoice {$invoice->getIncrementId()}")->save();
                     } else {
                         return false;
                     }
                 } catch (\Exception $e) {
                     $this->logger->logRefundException($e, $order->getId());
+                    $order->addStatusHistoryComment("NoFraud refund failed for invoice {$invoice->getIncrementId()}. Please consult the logs at var/log/info.log for more information.")->save();
                     return false;
                 }
             }

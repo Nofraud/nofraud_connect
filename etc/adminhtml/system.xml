@@ -68,6 +68,12 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
                         <field id="nofraud_connect/general/auto_cancel">1</field>
                     </depends>
                 </field>
+                <field id="auth_capture" translate="label" type="select"
+                       sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Capture Authorization On Pass</label>
+                    <comment>When enabled, the module will attempt to capture payment on the order authorization. This setting should only be toggled on after the payment gateway has been set to Authorize Only mode.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
             </group>
             <group id="order_statuses" translate="label" type="text" 
             sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
