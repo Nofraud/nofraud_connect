@@ -92,7 +92,7 @@ class Logger extends \Monolog\Logger
         parent::info($message, $context);
     }
 
-    public function error($message, array $context = [])
+    public function error($message, array $context = []): void
     {
         parent::error($message, $context);
     }
