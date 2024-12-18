@@ -266,7 +266,7 @@ class OrderFraudStatus
      */
     private function handleReviewDecision($order, $newStatus, $response)
     {
-        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+        $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response, true);
     }
     /**
      * Handles cases when there's an error in the NoFraud response.
@@ -295,7 +295,7 @@ class OrderFraudStatus
     {
         if (!empty($newStatus)) {
             $this->dataHelper->addDataToLog("Transitioning Order {$order->getIncrementId()} to status {$newStatus}");
-            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response, true);
         }
 
         $order->setNofraudStatus($decision);

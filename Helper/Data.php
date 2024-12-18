@@ -87,6 +87,55 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if (!$this->getDebugModeIsEnabled()) {
             return;
         }
+
+        $logger = $this->getLogger();
+
+        if ($data && is_array($data)) {
+            $logger->info(print_r($data, true));
+        } else {
+            $logger->info($data);
+        }
+    }
+
+    public function addErrorToLog($data)
+    {
+        $logger = $this->getLogger();
+
+        if ($data && is_array($data)) {
+            $logger->err(print_r($data, true));
+        } else {
+            $logger->err($data);
+        }
+    }
+
+    public function addInfoToLog($data)
+    {
+        $logger = $this->getLogger();
+
+        if ($data && is_array($data)) {
+            $logger->info(print_r($data, true));
+        } else {
+            $logger->info($data);
+        }
+    }
+
+    public function addDebugToLog($data)
+    {
+        if (!$this->getDebugModeIsEnabled()) {
+            return;
+        }
+
+        $logger = $this->getLogger();
+
+        if ($data && is_array($data)) {
+            $logger->info(print_r($data, true));
+        } else {
+            $logger->info($data);
+        }
+    }
+
+    private function getLogger()
+    {
         $baseVarDir = $this->directoryList->getPath("var");
         if (!$this->_directory->isDirectory("log")) {
             $this->file->mkdir($baseVarDir . "/log", 0777);
@@ -101,26 +150,23 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         if (version_compare($version, "2.4.3", "<")) {
             $writer = new \Laminas\Log\Writer\Stream(
                 $baseVarDir .
-                    "/log/nofraud_connect/payment-" .
-                    date("d-m-Y") .
-                    ".log"
+                "/log/nofraud_connect/log-" .
+                date("d-m-Y") .
+                ".log"
             );
             $logger = new \Laminas\Log\Logger();
             $logger->addWriter($writer);
         } else {
             $writer = new \Zend_Log_Writer_Stream(
                 $baseVarDir .
-                    "/log/nofraud_connect/payment-" .
-                    date("d-m-Y") .
-                    ".log"
+                "/log/nofraud_connect/log-" .
+                date("d-m-Y") .
+                ".log"
             );
             $logger = new \Zend_Log();
             $logger->addWriter($writer);
         }
-        if ($data && is_array($data)) {
-            $logger->info(print_r($data,true));
-        } else {
-            $logger->info($data);
-        }
+
+        return $logger;
     }
 }

@@ -17,6 +17,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const GENERAL_SCREENED_PAYMENT_METHODS = self::GENERAL . '/screened_payment_methods';
     private const GENERAL_AUTO_CANCEL = self::GENERAL . '/auto_cancel';
     private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
+    private const GENERAL_AUTH_CAPTURE = self::GENERAL . '/auth_capture';
     private const SKIP_CONFIG_SKIP_CUSTOMER_GROUPS = self::SKIP_CONFIG . '/skip_customer_group';
 
     private const PRODUCTION_URL = "https://api.nofraud.com/";
@@ -26,6 +27,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
 
     private const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
+
 
     /**
      * @var $logger
@@ -263,6 +265,11 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             return true;
         }
         return false;
+    }
+
+    public function authCaptureEnabled($storeId = null)
+    {
+        return $this->_getConfigValueByStoreId(self::GENERAL_AUTH_CAPTURE, $storeId);
     }
 
     private function _getSkipCustomerGroups($storeId = null): array
