@@ -33,30 +33,65 @@ class InvoiceService
      */
     public function createInvoice($order)
     {
-        if (!$order->canInvoice()) {
-            $this->logger->error('Error creating invoice: Order cannot be invoiced.');
-            return;
-        }
-
         try {
-            // Prepare and register the invoice
-            $invoice = $this->invoiceService->prepareInvoice($order);
-            $invoice->register();
+            // Check if order can be invoiced
+            if (!$order->canInvoice()) {
+                $this->logger->error('Error creating invoice: Order cannot be invoiced.');
+                return;
+            }
 
-            // Save invoice and order
-            $transaction = $this->transaction->addObject($invoice)->addObject($order);
-            $transaction->save();
+            // Check if order has already been invoiced
+            if ($order->getInvoiceCollection()->count() > 0) {
+                $this->logger->error('Error creating invoice: Order has already been invoiced.');
+                return;
+            }
 
-            // Send invoice email
-            $this->invoiceSender->send($invoice);
+            $invoice = $this->handleCreateInvoice($order); // Create invoice
+            $this->handleEmailCustomer($invoice); // Email customer
+            $this->handleOrderHistoryUpdate($order, $invoice); // Update order history
 
-            // Add history comment
-            $order->addStatusHistoryComment(__('Invoice #%1 captured successfully.', $invoice->getIncrementId()))
-                ->setIsCustomerNotified(true)
-                ->save();
         } catch (\Exception $e) {
             $this->logger->error('Error creating invoice: ' . $e->getMessage());
             return;
+        }
+    }
+
+    private function handleCreateInvoice($order): mixed
+    {
+        $invoice = null;
+        try {
+            $invoice = $this->invoiceService->prepareInvoice($order);
+            $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
+            $invoice->addComment('Invoice created by NoFraud');
+            $invoice->register();
+            $invoice->save();
+
+            // Save invoice and order
+            $transaction = $this->transaction->addObject($invoice)->addObject($invoice->getOrder());
+            $transaction->save();
+        } catch (\Exception $e) {
+            $this->logger->error('Error creating invoice: ' . $e->getMessage());
+        }
+
+        return $invoice;
+    }
+
+    private function handleEmailCustomer($invoice): void
+    {
+        try {
+            $this->invoiceSender->send($invoice);
+        } catch (\Exception $e) {
+            $this->logger->error('Error sending invoice email: ' . $e->getMessage());
+        }
+    }
+    private function handleOrderHistoryUpdate($order, $invoice): void
+    {
+        try {
+            $order->addStatusHistoryComment(__('Invoice #%1 captured successfully by NoFraud.', $invoice->getIncrementId()))
+                ->setIsCustomerNotified($invoice->getEmailSent() ? true : false)
+                ->save();
+        } catch (\Exception $e) {
+            $this->logger->error('Error updating order history: ' . $e->getMessage());
         }
     }
 }

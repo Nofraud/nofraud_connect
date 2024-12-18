@@ -138,9 +138,9 @@ class Processor
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
                 $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
-                    // If order passes screening, create an invoice
-                    $this->customInvoiceService->createInvoice($order);
                     $order->setNofraudStatus($response['http']['response']['body']['decision']);
+                    $order->save();
+                    $this->customInvoiceService->createInvoice($order);
                 }
             }
 
