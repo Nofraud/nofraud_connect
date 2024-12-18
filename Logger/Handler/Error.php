@@ -1,6 +1,8 @@
 <?php
 namespace NoFraud\Connect\Logger\Handler;
 
+use Magento\Framework\Filesystem\DriverInterface;
+
 class Error extends \Magento\Framework\Logger\Handler\Base
 {
     /**
