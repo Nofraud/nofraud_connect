@@ -87,7 +87,7 @@ class Logger extends \Monolog\Logger
         $this->critical($exception->getMessage());
     }
 
-    public function info($message, array $context = [])
+    public function info($message, array $context = []): void
     {
         parent::info($message, $context);
     }
