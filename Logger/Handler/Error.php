@@ -1,13 +1,13 @@
 <?php
 namespace NoFraud\Connect\Logger\Handler;
 
-class Info extends \Magento\Framework\Logger\Handler\Base
+class Error extends \Magento\Framework\Logger\Handler\Base
 {
     /**
      * Logging level
      * @var int
      */
-    protected $loggerType = \Monolog\Logger::INFO;
+    protected $loggerType = \Monolog\Logger::ERROR;
 
     /**
      * Default log file path (static file name).
