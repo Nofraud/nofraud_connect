@@ -4,6 +4,8 @@ namespace NoFraud\Connect\Logger;
 
 class Logger extends \Monolog\Logger
 {
+    private const XML_PATH_ORDER_DEBUG_ENABLED = "nofraud_connect/order_debug/debug";
+
     /**
      * Log Transaction Results
      *
@@ -95,6 +97,21 @@ class Logger extends \Monolog\Logger
     public function error($message, array $context = []): void
     {
         parent::error($message, $context);
+    }
+
+    public function debug($message, array $context = []): void
+    {
+        if ($this->getDebugModeIsEnabled()) {
+            parent::debug($message, $context);
+        }
+    }
+
+    private function getDebugModeIsEnabled(): mixed
+    {
+        return $this->scopeConfig->getValue(
+            self::XML_PATH_ORDER_DEBUG_ENABLED,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
     }
 }
 
