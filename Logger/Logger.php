@@ -2,6 +2,9 @@
 
 namespace NoFraud\Connect\Logger;
 
+use Magento\Framework\App\Config\ScopeConfigInterface;
+
+
 class Logger extends \Monolog\Logger
 {
     private const XML_PATH_ORDER_DEBUG_ENABLED = "nofraud_connect/order_debug/debug";
@@ -9,12 +12,12 @@ class Logger extends \Monolog\Logger
 
     public function __construct(
         string $name,
-        Config $configHelper,
+        ScopeConfigInterface $scopeConfig,
         array $handlers = [],
         array $processors = []
     ) {
         parent::__construct($name, $handlers, $processors);
-        $this->configHelper = $configHelper;
+        $this->configHelper = $scopeConfig;
     }
 
     /**
