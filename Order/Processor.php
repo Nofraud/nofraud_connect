@@ -125,7 +125,7 @@ class Processor
      * @param mixed $order
      * @param mixed $response
      */
-    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response, string $decision)
+    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response)
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
@@ -136,10 +136,12 @@ class Processor
                 $this->unholdOrder($order);
 
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
-                $noFraudresponse = $response['http']['response']['body']['decision'] ?? $decision ?? "";
+                $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
+                $this->dataHelper->addDataToLog("NoFraud Decision: " . $noFraudresponse);
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
                     $order->setNofraudStatus($noFraudresponse);
                     $order->save();
+                    $this->dataHelper->addDataToLog("INVOICE CREATION: " . $order->getIncrementId());
                     $this->customInvoiceService->createInvoice($order);
                 }
             }

@@ -16,19 +16,22 @@ class InvoiceService
     protected $invoiceSender;
     protected $logger;
     protected $orderHelper;
+    protected $dataHelper;
 
     public function __construct(
         MagentoInvoiceService $invoiceService,
         Transaction $transaction,
         InvoiceSender $invoiceSender,
         Logger $logger,
-        OrderHelper $orderHelper
+        OrderHelper $orderHelper,
+        \NoFraud\Connect\Helper\Data $dataHelper
     ) {
         $this->invoiceService = $invoiceService;
         $this->transaction = $transaction;
         $this->invoiceSender = $invoiceSender;
         $this->logger = $logger;
         $this->orderHelper = $orderHelper;
+        $this->dataHelper = $dataHelper;
     }
 
     /**
@@ -39,17 +42,18 @@ class InvoiceService
     public function createInvoice($order)
     {
         try {
+            $this->dataHelper->addDataToLog(__('Creating invoice for order #%1', $order->getIncrementId()));
             // Check if order can be invoiced
             if (!$order->canInvoice()) {
                 $reasons = $this->orderHelper->getInvoiceBlockingReasons($order);
-                $this->logger->debug(__('Unable to create invoice for order #%1: %2', $order->getIncrementId(), implode(", ", $reasons)));
+                $this->dataHelper->addDataToLog(__('Unable to create invoice for order #%1: %2', $order->getIncrementId(), implode(", ", $reasons)));
                 $order->addStatusHistoryComment(__('NoFraud was unable to capture payment: %1', implode(", ", $reasons)))->save();
                 return;
             }
 
             // Check if order has already been invoiced
             if ($order->getInvoiceCollection()->count() > 0) {
-                $this->logger->error(__('Error creating invoice for order #%1: Order has already been invoiced.', $order->getIncrementId()));
+                $this->dataHelper->addDataToLog(__('Error creating invoice for order #%1: Order has already been invoiced.', $order->getIncrementId()));
                 $order->addStatusHistoryComment(__('NoFraud was unable to capture payment: Order has already been invoiced.'))->save();
                 return;
             }
