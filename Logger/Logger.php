@@ -17,7 +17,7 @@ class Logger extends \Monolog\Logger
         array $processors = []
     ) {
         parent::__construct($name, $handlers, $processors);
-        $this->configHelper = $scopeConfig;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
