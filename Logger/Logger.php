@@ -2,9 +2,21 @@
 
 namespace NoFraud\Connect\Logger;
 
+use NoFraud\Connect\Helper\Config;
+
 class Logger extends \Monolog\Logger
 {
-    private const XML_PATH_ORDER_DEBUG_ENABLED = "nofraud_connect/order_debug/debug";
+    private $configHelper;
+
+    public function __construct(
+        string $name,
+        Config $configHelper,
+        array $handlers = [],
+        array $processors = []
+    ) {
+        parent::__construct($name, $handlers, $processors);
+        $this->configHelper = $configHelper;
+    }
 
     /**
      * Log Transaction Results
@@ -101,17 +113,9 @@ class Logger extends \Monolog\Logger
 
     public function debug($message, array $context = []): void
     {
-        if ($this->getDebugModeIsEnabled()) {
+        if ($this->configHelper->getDebugModeIsEnabled()) {
             parent::debug($message, $context);
         }
-    }
-
-    private function getDebugModeIsEnabled(): mixed
-    {
-        return $this->scopeConfig->getValue(
-            self::XML_PATH_ORDER_DEBUG_ENABLED,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
     }
 }
 

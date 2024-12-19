@@ -27,6 +27,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     private const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
 
+    private const XML_PATH_ORDER_DEBUG_ENABLED = "nofraud_connect/order_debug/debug";
+
+
     /**
      * @var $logger
      */
@@ -263,6 +266,14 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             return true;
         }
         return false;
+    }
+
+    public function getDebugModeIsEnabled(): mixed
+    {
+        return $this->scopeConfig->getValue(
+            self::XML_PATH_ORDER_DEBUG_ENABLED,
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
     }
 
     private function _getSkipCustomerGroups($storeId = null): array
