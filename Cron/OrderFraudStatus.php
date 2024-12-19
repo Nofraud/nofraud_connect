@@ -295,7 +295,7 @@ class OrderFraudStatus
     {
         if (!empty($newStatus)) {
             $this->dataHelper->addDataToLog("Transitioning Order {$order->getIncrementId()} to status {$newStatus}");
-            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response);
+            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $response, $decision);
         }
 
         $order->setNofraudStatus($decision);
