@@ -125,7 +125,7 @@ class Processor
      * @param mixed $order
      * @param mixed $response
      */
-    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response)
+    public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response, bool $isCron = false)
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
@@ -142,7 +142,7 @@ class Processor
                     $order->setNofraudStatus($noFraudresponse);
                     $order->save();
                     $this->dataHelper->addDataToLog("INVOICE CREATION: " . $order->getIncrementId());
-                    $this->customInvoiceService->createInvoice($order);
+                    $this->customInvoiceService->createInvoice($order, $isCron);
                 }
             }
 

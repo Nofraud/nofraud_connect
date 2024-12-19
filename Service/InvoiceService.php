@@ -17,6 +17,7 @@ class InvoiceService
     protected $logger;
     protected $orderHelper;
     protected $dataHelper;
+    protected $orderRepository;
 
     public function __construct(
         MagentoInvoiceService $invoiceService,
@@ -24,7 +25,8 @@ class InvoiceService
         InvoiceSender $invoiceSender,
         Logger $logger,
         OrderHelper $orderHelper,
-        \NoFraud\Connect\Helper\Data $dataHelper
+        \NoFraud\Connect\Helper\Data $dataHelper,
+        \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
     ) {
         $this->invoiceService = $invoiceService;
         $this->transaction = $transaction;
@@ -32,6 +34,7 @@ class InvoiceService
         $this->logger = $logger;
         $this->orderHelper = $orderHelper;
         $this->dataHelper = $dataHelper;
+        $this->orderRepository = $orderRepository;
     }
 
     /**
@@ -39,9 +42,14 @@ class InvoiceService
      *
      * @param \Magento\Sales\Model\Order $order
      */
-    public function createInvoice($order)
+    public function createInvoice($order, $isCron = false): void
     {
         try {
+            // Fetch full order object if invoked from cron
+            if ($isCron) {
+                $order = $this->orderRepository->get($order->getId());
+            }
+
             $this->dataHelper->addDataToLog(__('Creating invoice for order #%1', $order->getIncrementId()));
             // Check if order can be invoiced
             if (!$order->canInvoice()) {
