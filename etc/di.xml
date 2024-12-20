@@ -33,4 +33,7 @@
             </argument>
         </arguments>
     </virtualType>
+    <type name="ParadoxLabs\TokenBase\Observer\SetInitialOrderStatusObserver">
+        <plugin name="nofraud_set_initial_order_status_plugin" type="NoFraud\Connect\Plugin\SetInitialOrderStatusPlugin" />
+    </type>
 </config>
