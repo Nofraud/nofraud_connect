@@ -36,4 +36,8 @@
     <type name="ParadoxLabs\TokenBase\Observer\SetInitialOrderStatusObserver">
         <plugin name="nofraud_set_initial_order_status_plugin" type="NoFraud\Connect\Plugin\SetInitialOrderStatusPlugin" />
     </type>
+
+    <type name="Magento\Sales\Model\Service\PaymentFailuresService">
+        <plugin name="nofraud_payment_attempt_plugin" type="NoFraud\Connect\Plugin\PaymentFailuresPlugin" sortOrder="10" />
+    </type>
 </config>
