@@ -33,4 +33,8 @@
             </argument>
         </arguments>
     </virtualType>
+
+    <type name="Magento\Sales\Model\Service\PaymentFailuresService">
+        <plugin name="nofraud_payment_attempt_plugin" type="NoFraud\Connect\Plugin\PaymentFailuresPlugin" sortOrder="10" />
+    </type>
 </config>
