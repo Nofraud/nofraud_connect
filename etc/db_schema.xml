@@ -30,4 +30,7 @@
                 <column xsi:type="text" name="nofraud_transaction_id" nullable="false" 
                 comment="NoFraud screened order transaction id"/>
         </table>
+        <table name="quote" resource="default" engine="innodb" comment="Quote Table">
+                <column name="nofraud_failed_payment_attempts" xsi:type="int" nullable="false" default="0" comment="Failed Payment Attempts"/>
+        </table>
  </schema>
