@@ -180,6 +180,7 @@ class Processor
                 $order->setNofraudStatus($decision);
                 $order->setState(Order::STATE_CANCELED);
                 $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
+                $order->addStatusHistoryComment("NoFraud triggered order cancellation.");
                 $order->save();
 
                 return true;
