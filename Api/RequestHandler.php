@@ -4,6 +4,7 @@ namespace NoFraud\Connect\Api;
 
 use Magento\Framework\Simplexml\Element;
 use NoFraud\Connect\Logger\Logger;
+use \Magento\Quote\Model\QuoteFactory;
 
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
@@ -15,6 +16,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     private const PL_MI_METHOD_CODE = 'nmi_directpost';
     private const CYBERSOURCE_METHOD_CODE = 'chcybersource';
     private $versionHelper;
+    private $quoteFactory;
 
     /**
      * @var Currency
@@ -71,7 +73,9 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         \Magento\Customer\Model\Customer $customer,
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
-        \NoFraud\Connect\Helper\Version $versionHelper
+        \NoFraud\Connect\Helper\Version $versionHelper,
+        QuoteFactory $quoteFactory
+
     ) {
 
         parent::__construct($logger, $curl);
@@ -82,6 +86,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->_localeResolver = $localeResolver;
         $this->versionHelper = $versionHelper;
+        $this->quoteFactory = $quoteFactory;
     }
 
     /**
@@ -129,6 +134,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
             $baseParams['version'] = '';
         }
 
+        $baseParams['cardAttempts'] = $this->getPaymentAttempts($order);
         $baseParams['nf-token'] = $apiToken;
         $baseParams['amount'] = $this->formatTotal($order->getGrandTotal());
         $baseParams['currency_code'] = $order->getOrderCurrencyCode();
@@ -146,6 +152,21 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         }
 
         return $baseParams;
+    }
+
+    private function getPaymentAttempts($order): int|null
+    {
+        try {
+            $quote = $this->quoteFactory->create()->load($order->getQuoteId());
+            $cardAttempts = $quote->getNofraudFailedPaymentAttempts();
+            if (is_int($cardAttempts)) {
+                return $cardAttempts + 1;
+            }
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to get payment attempts: " . $e->getMessage());
+        }
+
+        return null;
     }
 
     /**
