@@ -97,6 +97,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    /**
+     * Log Error
+     *
+     * @param mixed $data
+     * @return void
+     */
     public function addErrorToLog($data)
     {
         $logger = $this->getLogger();
@@ -108,6 +114,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    /**
+     * Log Info
+     *
+     * @param mixed $data
+     * @return void
+     */
     public function addInfoToLog($data)
     {
         $logger = $this->getLogger();
@@ -119,6 +131,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    /**
+     * Log Debug
+     *
+     * @param mixed $data
+     * @return void
+     */
     public function addDebugToLog($data)
     {
         if (!$this->getDebugModeIsEnabled()) {
@@ -134,6 +152,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
     }
 
+    /**
+     * Get Logger
+     *
+     * @return \Laminas\Log\Logger|\Zend_Log
+     */
     private function getLogger()
     {
         $baseVarDir = $this->directoryList->getPath("var");
