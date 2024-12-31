@@ -124,6 +124,7 @@ class Processor
      * @param mixed $noFraudOrderStatus
      * @param mixed $order
      * @param mixed $response
+     * @param bool  $isCron
      */
     public function updateOrderStatusFromNoFraudResult($noFraudOrderStatus, $order, $response, bool $isCron = false)
     {
@@ -246,16 +247,23 @@ class Processor
                     $this->dataHelper->addDataToLog("Invoice can void: " . $invoice->canVoid());
                     if ($invoice->canRefund()) {
                         $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
-                        $order->addStatusHistoryComment("NoFraud triggered refund of invoice {$invoice->getIncrementId()}");
+                        $order->addStatusHistoryComment(
+                            "NoFraud triggered refund of invoice {$invoice->getIncrementId()}"
+                        )->save();
                     } elseif ($invoice->canVoid()) {
                         $invoice->void();
-                        $order->addStatusHistoryComment("NoFraud triggered void of invoice {$invoice->getIncrementId()}");
+                        $order->addStatusHistoryComment(
+                            "NoFraud triggered void of invoice {$invoice->getIncrementId()}"
+                        )->save();
                     } else {
                         return false;
                     }
                 } catch (\Exception $e) {
                     $this->logger->logRefundException($e, $order->getId());
-                    $order->addStatusHistoryComment("NoFraud refund failed for invoice {$invoice->getIncrementId()}. Please consult the logs at var/log/info.log for more information.");
+                    $order->addStatusHistoryComment(
+                        "NoFraud refund failed for invoice {$invoice->getIncrementId()}. " .
+                        "Please consult the logs at var/log/info.log for more information."
+                    )->save();
                     return false;
                 }
             }

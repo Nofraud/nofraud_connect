@@ -15,15 +15,29 @@ jobs:
         with:
           fetch-depth: 0 # important!
 
-      # we may use whatever way to install phpcs, just specify the path on the next step
-      # however, curl seems to be the fastest
-      - name: Install PHP_CodeSniffer
-        run: |
-          curl -OL https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
-          php phpcs.phar --version
-
-      - uses: tinovyatkin/action-php-codesniffer@v1
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
         with:
-          files: "**.php" # you may customize glob as needed
-          phpcs_path: php phpcs.phar
-          standard: PEAR
+          php-version: "8.1" # Adjust to your Magento project's PHP version
+          tools: composer
+
+      - name: Allow Composer Plugins
+        run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+
+      - name: Install Magento 2 Coding Standard (includes PHPCS)
+        run: |
+          composer global require magento/magento-coding-standard
+          export PATH="$HOME/.composer/vendor/bin:$PATH"
+          phpcs --version
+
+      - name: Get Changed PHP Files
+        id: changed-files
+        run: |
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- '*.php')
+          echo "::set-output name=files::$CHANGED_FILES"
+
+      - name: Run PHP_CodeSniffer on Changed Files
+        if: steps.changed-files.outputs.files != ''
+        run: |
+          phpcs --standard=Magento2 --ignore=vendor ${{ steps.changed-files.outputs.files }}
