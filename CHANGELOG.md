@@ -1,3 +1,12 @@
+# [1.6.0](https://github.com/Nofraud/nofraud_connect/compare/v1.5.0...v1.6.0) (2025-01-07)
+
+
+### Features
+
+* Add authorize and capture flow ([d39e509](https://github.com/Nofraud/nofraud_connect/commit/d39e509fe2c585a2e4a0e5536f0f6eac4b766ec2))
+* Add status history comment for refund and void actions. ([b2b3526](https://github.com/Nofraud/nofraud_connect/commit/b2b352698d378239c86322c8dc0829aff01f9f12))
+* Add status message when order cancelled. ([cd9c90c](https://github.com/Nofraud/nofraud_connect/commit/cd9c90c8a2bc0f982aa582616e9e04190d0fd68b))
+
 # [1.5.0](https://github.com/Nofraud/nofraud_connect/compare/v1.4.2...v1.5.0) (2024-12-02)
 
 
