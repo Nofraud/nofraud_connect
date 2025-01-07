@@ -4,6 +4,7 @@ namespace NoFraud\Connect\Order;
 
 use Magento\Sales\Model\Order;
 use Magento\Framework\Serialize\Serializer\Json;
+use \NoFraud\Connect\Helper\RefundVoid;
 
 class Processor
 {
@@ -47,6 +48,11 @@ class Processor
      * @var InvoiceRepositoryInterface
      */
     protected $invoiceRepositoryInterface;
+
+    /**
+     * @var RefundVoid
+     */
+    protected $refundVoidHelper;
     /**
      * @var \NoFraud\Connect\Service\InvoiceService
      */
@@ -66,6 +72,7 @@ class Processor
      * @param \Magento\Store\Model\StoreManagerInterface $storeManager
      * @param \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface
      * @param \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface
+     * @param RefundVoid $refundVoidHelper
      * @param \NoFraud\Connect\Service\InvoiceService $nofraudInvoiceService
      */
     public function __construct(
@@ -78,6 +85,7 @@ class Processor
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Sales\Api\RefundInvoiceInterface $refundInvoiceInterface,
         \Magento\Sales\Api\InvoiceRepositoryInterface $invoiceRepositoryInterface,
+        RefundVoid $refundVoidHelper,
         \NoFraud\Connect\Service\InvoiceService $nofraudInvoiceService,
     ) {
         $this->logger = $logger;
@@ -89,6 +97,7 @@ class Processor
         $this->storeManager = $storeManager;
         $this->refundInvoiceInterface = $refundInvoiceInterface;
         $this->invoiceRepositoryInterface = $invoiceRepositoryInterface;
+        $this->refundVoidHelper = $refundVoidHelper;
         $this->nofraudInvoiceService = $nofraudInvoiceService;
     }
 
@@ -243,27 +252,9 @@ class Processor
             $invoices = $order->getInvoiceCollection();
             foreach ($invoices as $invoice) {
                 try {
-                    $this->dataHelper->addDataToLog("Invoice can refund: " . $invoice->canRefund());
-                    $this->dataHelper->addDataToLog("Invoice can void: " . $invoice->canVoid());
-                    if ($invoice->canRefund()) {
-                        $this->refundInvoiceInterface->execute($invoice->getId(), [], true);
-                        $order->addStatusHistoryComment(
-                            "NoFraud triggered refund of invoice {$invoice->getIncrementId()}"
-                        )->save();
-                    } elseif ($invoice->canVoid()) {
-                        $invoice->void();
-                        $order->addStatusHistoryComment(
-                            "NoFraud triggered void of invoice {$invoice->getIncrementId()}"
-                        )->save();
-                    } else {
-                        return false;
-                    }
+                    $this->refundVoidHelper->handleSingleInvoice($invoice, $order);
                 } catch (\Exception $e) {
-                    $this->logger->logRefundException($e, $order->getId());
-                    $order->addStatusHistoryComment(
-                        "NoFraud refund failed for invoice {$invoice->getIncrementId()}. " .
-                        "Please consult the logs at var/log/info.log for more information."
-                    )->save();
+                    $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
                     return false;
                 }
             }

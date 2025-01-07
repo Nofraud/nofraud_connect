@@ -2,6 +2,8 @@
 
 namespace NoFraud\Connect\Logger;
 
+use Magento\Framework\Exception\CommandException;
+
 class Logger extends \Monolog\Logger
 {
     /**
@@ -83,7 +85,14 @@ class Logger extends \Monolog\Logger
      */
     public function logRefundException($exception, $orderNumber)
     {
-        $this->critical('We could not process the refund for order number ' . $orderNumber . ' for the following reasons:');
-        $this->critical($exception->getRawMessage());
+        $this->critical(
+            'We could not process the refund for order number ' . $orderNumber . ' for the following reasons:'
+        );
+
+        if ($exception instanceof CommandException) {
+            $this->critical($exception->getRawMessage());
+        } else {
+            $this->critical($exception->getMessage());
+        }
     }
 }
