@@ -20,13 +20,6 @@ class SetInitialOrderStatusPlugin
         callable $proceed,
         Observer $observer
     ) {
-        // Add custom NoFraud logic to stop execution
-        $order = $observer->getEvent()->getOrder();
-        if ($order) {
-            $order->addCommentToStatusHistory('NoFraud: Original logic skipped by plugin.');
-        }
-
         // Return without calling $proceed to stop original logic
-        return;
     }
 }
