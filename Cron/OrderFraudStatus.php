@@ -35,6 +35,10 @@ class OrderFraudStatus
      * @var OrderProcessor
      */
     private $orderProcessor;
+    /**
+     * @var \Magento\Sales\Api\OrderRepositoryInterface
+     */
+    private $orderRepository;
 
     /**
      * Constructor
@@ -46,6 +50,7 @@ class OrderFraudStatus
      * @param \NoFraud\Connect\Helper\Data $dataHelper
      * @param \NoFraud\Connect\Api\ApiUrl $apiUrl
      * @param \NoFraud\Connect\Order\Processor $orderProcessor
+     * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
      */
     public function __construct(
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactory $orders,
@@ -54,7 +59,8 @@ class OrderFraudStatus
         \NoFraud\Connect\Helper\Config $configHelper,
         \NoFraud\Connect\Helper\Data $dataHelper,
         \NoFraud\Connect\Api\ApiUrl $apiUrl,
-        \NoFraud\Connect\Order\Processor $orderProcessor
+        \NoFraud\Connect\Order\Processor $orderProcessor,
+        \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
     ) {
         $this->orders = $orders;
         $this->storeManager = $storeManager;
@@ -63,6 +69,7 @@ class OrderFraudStatus
         $this->dataHelper = $dataHelper;
         $this->apiUrl = $apiUrl;
         $this->orderProcessor = $orderProcessor;
+        $this->orderRepository = $orderRepository;
     }
 
     /**
@@ -82,7 +89,7 @@ class OrderFraudStatus
             if (!count($screenedOrderStatus)) {
                 return;
             }
-            $orders = $this->readOrders($storeId);
+            $orders = $this->readOrders(storeId: $storeId);
             $this->updateOrdersFromNoFraudApiResult($orders, $storeId);
         }
     }
@@ -163,13 +170,16 @@ class OrderFraudStatus
                 // Translate the decision into a status based on the configuration.
                 $newStatus = $this->orderProcessor->getCustomOrderStatus($response['http']['response'], $storeId);
 
+                $order->save();
+
+                $fullOrder =$this->orderRepository->get($order->getId());
                 // If a decision was returned by the API, handle it, else handle error.
                 if ($decision) {
-                    $this->handleDecisionBasedUpdates($order, $decision, $newStatus, $response, $storeId);
+                    $this->handleDecisionBasedUpdates($fullOrder, $decision, $newStatus, $response, $storeId);
                 } else {
-                    $this->handleNoFraudError($order, $newStatus, $response);
+                    $this->handleNoFraudError($fullOrder, $newStatus, $response);
                 }
-                $order->save();
+                $fullOrder->save();
             } catch (\Exception $exception) {
                 $this->dataHelper->addDataToLog("Error for Order#" . $order['increment_id']);
                 $this->dataHelper->addDataToLog($exception->getMessage());
