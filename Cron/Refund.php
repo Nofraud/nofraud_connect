@@ -98,7 +98,7 @@ class Refund
     private function attemptOrderRefund($orders)
     {
         foreach ($orders as $order) {
-            if ($this->orderProcessor->refundOrder($order)) {
+            if ($this->orderProcessor->refundOrder($order)->success) {
                 $order->setNofraudIsRefundFailed(0)->save();
             }
         }

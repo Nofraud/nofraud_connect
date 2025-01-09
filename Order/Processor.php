@@ -139,6 +139,7 @@ class Processor
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
+            $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
             if ($newState == Order::STATE_HOLDED) {
                 $this->holdOrder($order);
             } elseif ($newState) {
@@ -146,14 +147,19 @@ class Processor
                 $this->unholdOrder($order);
 
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
-                $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
                     $order->setNofraudStatus($noFraudresponse);
                     $order->save();
                     $this->nofraudInvoiceService->createInvoice($order, $isCron);
                 }
             }
+            if ($isCron && $noFraudresponse === "review") {
+                return;
+            }
 
+            $order->addStatusHistoryComment(
+                "NoFraud updated order status to " .  $noFraudOrderStatus . " due to a decision of " . $noFraudresponse
+            );
         }
     }
 
@@ -178,8 +184,9 @@ class Processor
      *
      * @param mixed $order
      * @param mixed $decision
+     * @param bool  $isCron
      */
-    public function handleAutoCancel($order, $decision)
+    public function handleAutoCancel($order, $decision, $isCron = false)
     {
         // if order failed NoFraud check, try to refund and cancel order
         if ($decision == 'fail' || $decision == 'fraudulent') {
@@ -189,16 +196,26 @@ class Processor
                 return true;
             }
 
+            if (!$this->refundOrder($order)->success) {
+                $refundFailed = true;
+            }
+
             if ($order->canCancel()) {
                 $order->cancel();
-                $order->setNofraudStatus($decision);
-                $order->setState(Order::STATE_CANCELED);
-                $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
+
+                if (!$isCron) {
+                    $order->setNofraudStatus($decision);
+                    $order->setState(Order::STATE_CANCELED);
+                    $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
+                }
+                
                 $order->addStatusHistoryComment("NoFraud triggered order cancellation due to fail decision.");
                 $order->save();
 
                 return true;
-            } elseif (!$this->refundOrder($order)) {
+            }
+
+            if ($refundFailed) {
                 $order->setNofraudIsRefundFailed(true);
                 $order->addStatusHistoryComment(
                     "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
@@ -266,11 +283,17 @@ class Processor
                     $this->refundVoidHelper->handleSingleInvoice($invoice, $order);
                 } catch (\Exception $e) {
                     $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
-                    return false;
+                    return [
+                    'success' => false,
+                    'invoiceCount' => $invoices->count()
+                    ];
                 }
             }
         }
-        return true;
+        return (object) [
+        'success' => true,
+        'hasInvoices' => (bool)$invoices->count()
+        ];
     }
 
     /**
