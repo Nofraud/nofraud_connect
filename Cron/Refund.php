@@ -49,7 +49,6 @@ class Refund
     ) {
         $this->orders = $orders;
         $this->storeManager = $storeManager;
-        $this->requestHandler = $requestHandler;
         $this->configHelper = $configHelper;
         $this->dataHelper = $dataHelper;
         $this->orderProcessor = $orderProcessor;
