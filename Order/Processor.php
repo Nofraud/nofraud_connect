@@ -285,7 +285,7 @@ class Processor
                     $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
                     return [
                     'success' => false,
-                    'invoiceCount' => $invoices->count()
+                    'hasInvoices' => (bool)$invoices->count()
                     ];
                 }
             }
