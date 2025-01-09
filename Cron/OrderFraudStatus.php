@@ -172,7 +172,7 @@ class OrderFraudStatus
 
                 $order->save();
 
-                $fullOrder =$this->orderRepository->get($order->getId());
+                $fullOrder = $this->orderRepository->get($order->getId());
                 // If a decision was returned by the API, handle it, else handle error.
                 if ($decision) {
                     $this->handleDecisionBasedUpdates($fullOrder, $decision, $newStatus, $response, $storeId);
@@ -252,7 +252,7 @@ class OrderFraudStatus
         // Next, check if auto-cancel is enabled and if so, attempt to cancel the order.
         if ($this->configHelper->getAutoCancel($storeId)) {
             $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order['increment_id']);
-            if ($this->orderProcessor->handleAutoCancel($order, $decision)) {
+            if ($this->orderProcessor->handleAutoCancel($order, $decision, true)) {
                 $this->dataHelper->addDataToLog("Auto-cancel successful for Order#" . $order['increment_id']);
             } else {
                 $this->dataHelper->addDataToLog("Auto-cancel failed for Order#" . $order['increment_id']);

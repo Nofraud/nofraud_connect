@@ -60,6 +60,8 @@ class Processor
 
     private const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
 
+    private const BRAINTREE_CODE = 'braintree';
+
     /**
      * Constructor
      *
@@ -139,6 +141,7 @@ class Processor
     {
         if (!empty($noFraudOrderStatus)) {
             $newState = $this->getStateFromStatus($noFraudOrderStatus);
+            $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
             if ($newState == Order::STATE_HOLDED) {
                 $this->holdOrder($order);
             } elseif ($newState) {
@@ -146,14 +149,22 @@ class Processor
                 $this->unholdOrder($order);
 
                 $order->setStatus($noFraudOrderStatus)->setState($newState);
-                $noFraudresponse = $response['http']['response']['body']['decision'] ?? "";
                 if (isset($noFraudresponse) && ($noFraudresponse == 'pass')) {
                     $order->setNofraudStatus($noFraudresponse);
                     $order->save();
                     $this->nofraudInvoiceService->createInvoice($order, $isCron);
                 }
             }
+            if ($isCron && $noFraudresponse === "review") {
+                return;
+            }
 
+            $order->addStatusHistoryComment(
+                "NoFraud updated order status to " .
+                $this->dataHelper->getStatusLabelByCode($noFraudOrderStatus) .
+                " due to a decision of " .
+                $noFraudresponse
+            );
         }
     }
 
@@ -179,24 +190,53 @@ class Processor
      * @param mixed $order
      * @param mixed $decision
      */
-    public function handleAutoCancel($order, $decision)
+    public function handleAutoCancel($order, $decision, $isCron = false)
     {
-        // if order failed NoFraud check, try to refund and cancel order
-        if ($decision == 'fail' || $decision == 'fraudulent') {
-            $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
-            // Handle custom cancel for Payment Method if needed
-            if ($this->refundOrder($order) && !$this->_runCustomAutoCancel($order)) {
-                $order->cancel();
-                $order->setNofraudStatus($decision);
-                $order->setState(Order::STATE_CANCELED);
-                $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
-                $order->addStatusHistoryComment("NoFraud triggered order cancellation.");
-                $order->save();
-
-                return true;
-            }
+        if ($decision != 'fail' && $decision != 'fraudulent') {
+            return false;
         }
-        return false;
+
+        // if order failed NoFraud check, try to refund and cancel order
+        $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
+        $refundFailed = false;
+
+        if ($this->_runCustomAutoCancel(order: $order)) {
+            return true;
+        }
+
+        // Try to refund/void the invoices on the order (if any)
+        if (!$this->refundOrder($order)->success) {
+            $refundFailed = true;
+        }
+
+        // Try to cancel the order (will attempt to void the authorization if possible)
+        if ($order->canCancel()) {
+            $order->cancel();
+            $order->addStatusHistoryComment("NoFraud triggered order cancellation due to fail decision.");
+            $order->save();
+
+            return true;
+        }
+
+        if ($refundFailed) {
+            $payment = $order->getPayment();
+            if ($payment->getMethod() === self::BRAINTREE_CODE) {
+                $order->setStatus(ORDER::STATUS_FRAUD)->setState(ORDER::STATE_PAYMENT_REVIEW)->save();
+                if ($isCron) {
+                    $payment->deny();
+                    $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied by status update cron");
+                    return true;
+                }
+            }
+            $order->setNofraudIsRefundFailed(true);
+            $order->addStatusHistoryComment(
+                "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
+                "A re-attempt will be made."
+            );
+            $order->save();
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -255,11 +295,15 @@ class Processor
                     $this->refundVoidHelper->handleSingleInvoice($invoice, $order);
                 } catch (\Exception $e) {
                     $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
-                    return false;
+                    return (object) [
+                        'success' => false
+                    ];
                 }
             }
         }
-        return true;
+        return (object) [
+            'success' => true
+        ];
     }
 
     /**

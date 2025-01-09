@@ -10,6 +10,7 @@ namespace NoFraud\Connect\Helper;
 use NoFraud\Connect\Exception\InvoiceRefundException;
 use NoFraud\Connect\Exception\InvoiceVoidException;
 use NoFraud\Connect\Exception\InvoiceRefundOrVoidException;
+use \Magento\Sales\Model\Order;
 
 class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -65,6 +66,13 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
         if ($invoice->canRefund()) {
             try {
                 $this->attemptRefund($invoice);
+                // Set order status to closed if refund successful
+                if ($order->getState() != Order::STATE_CLOSED) {
+                    $order->setState(Order::STATE_CLOSED)
+                        ->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CLOSED));
+                }
+                $order->addStatusHistoryComment("NoFraud triggered a refund of invoice #" . $invoice->getIncrementId() . " due to a fail decision.");
+                $order->save();
             } catch (\Exception $refundException) {
                 // Log refund exception
                 $this->logger->logRefundException($refundException, $order->getId());
@@ -73,7 +81,7 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
                 try {
                     $this->attemptVoid($invoice);
                 } catch (InvoiceVoidException $voidException) {
-                  // If both refund and void fail, notify the caller
+                    // If both refund and void fail, notify the caller
                     $this->logger->logRefundException($voidException, $order->getId());
 
                     throw new InvoiceRefundOrVoidException(
@@ -85,13 +93,14 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
 
             }
 
-        // If refund is not possible, try void directly
+            // If refund is not possible, try void directly
         } elseif ($invoice->canVoid()) {
             try {
                 $this->attemptVoid($invoice);
+                $order->addStatusHistoryComment("NoFraud triggered a void of invoice #" . $invoice->getIncrementId() . "  due to a fail decision.");
             } catch (InvoiceVoidException $voidException) {
                 $this->logger->logRefundException($voidException, $order->getId());
- 
+
 
                 throw new InvoiceRefundOrVoidException(
                     "Invoice cannot be refunded or voided",
@@ -100,14 +109,14 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
                 );
             }
 
-        // Otherwise, neither refund nor void are possible
+            // Otherwise, neither refund nor void are possible
         } else {
             throw new InvoiceRefundOrVoidException(
                 "Invoice cannot be refunded or voided (not eligible for either)."
             );
         }
     }
-    
+
     /**
      * Attempt to refund an invoice
      *
