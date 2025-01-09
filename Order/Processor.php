@@ -190,7 +190,6 @@ class Processor
             }
 
             if ($order->canCancel()) {
-                $this->refundOrder($order);
                 $order->cancel();
                 $order->setNofraudStatus($decision);
                 $order->setState(Order::STATE_CANCELED);
