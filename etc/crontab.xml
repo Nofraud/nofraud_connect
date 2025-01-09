@@ -20,5 +20,6 @@
         </job>
         <job name="nofraud_payment_refund" instance="NoFraud\Connect\Cron\Refund" method="execute">
             <schedule>* * * * *</schedule>
+        </job>
     </group>
 </config>
