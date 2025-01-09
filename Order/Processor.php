@@ -194,6 +194,7 @@ class Processor
         // if order failed NoFraud check, try to refund and cancel order
         if ($decision == 'fail' || $decision == 'fraudulent') {
             $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
+            $refundFailed = false;
 
             if ($this->_runCustomAutoCancel($order)) {
                 return true;
