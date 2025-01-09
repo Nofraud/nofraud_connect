@@ -280,7 +280,7 @@ class Processor
                     $this->refundVoidHelper->handleSingleInvoice($invoice, $order);
                 } catch (\Exception $e) {
                     $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
-                    return [
+                    return (object)[
                     'success' => false,
                     'hasInvoices' => (bool)$invoices->count()
                     ];
