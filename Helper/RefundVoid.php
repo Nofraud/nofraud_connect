@@ -91,7 +91,7 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
                 $this->attemptVoid($invoice);
             } catch (InvoiceVoidException $voidException) {
                 $this->logger->logRefundException($voidException, $order->getId());
- 
+
 
                 throw new InvoiceRefundOrVoidException(
                     "Invoice cannot be refunded or voided",

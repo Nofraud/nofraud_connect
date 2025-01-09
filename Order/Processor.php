@@ -184,13 +184,18 @@ class Processor
         // if order failed NoFraud check, try to refund and cancel order
         if ($decision == 'fail' || $decision == 'fraudulent') {
             $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
-            // Handle custom cancel for Payment Method if needed
-            if ($this->refundOrder($order) && !$this->_runCustomAutoCancel($order)) {
+
+            if (!$this->refundOrder($order)) {
+                $order->setNofraudIsRefundFailed(true);
+                $order->addStatusHistoryComment("NoFraud was unable to refund/void the order.");
+            }
+
+            if (!$this->_runCustomAutoCancel($order) && $order->canCancel()) {
                 $order->cancel();
                 $order->setNofraudStatus($decision);
                 $order->setState(Order::STATE_CANCELED);
                 $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
-                $order->addStatusHistoryComment("NoFraud triggered order cancellation.");
+                $order->addStatusHistoryComment("NoFraud triggered order cancellation due to fail decision.");
                 $order->save();
 
                 return true;
