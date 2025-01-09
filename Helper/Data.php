@@ -43,6 +43,12 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $directoryList;
 
     /**
+     *
+     * @var CollectionFactory
+     */
+    protected $statusCollectionFactory;
+
+    /**
      * Constructor
      *
      * @param \Magento\Framework\App\Helper\Context $context
