@@ -9,6 +9,7 @@ use Magento\Framework\Filesystem\Io\File;
 use Magento\Framework\Filesystem;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Sales\Model\Order\Status\LabelFactory;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -49,13 +50,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param ObjectManagerInterface $objectManager
      * @param File $file
      * @param Filesystem $filesystem
+     * @param LabelFactory $statusLabelFactory
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
         \Magento\Framework\Filesystem\DirectoryList $directoryList,
         ObjectManagerInterface $objectManager,
         File $file,
-        Filesystem $filesystem
+        Filesystem $filesystem,
+        LabelFactory $statusLabelFactory
     ) {
         $this->directoryList = $directoryList;
         $this->objectManager = $objectManager;
@@ -63,6 +66,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_directory = $filesystem->getDirectoryWrite(
             DirectoryList::VAR_DIR
         );
+        $this->statusLabelFactory = $statusLabelFactory;
         parent::__construct($context);
     }
     /**
@@ -191,5 +195,22 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         }
 
         return $logger;
+    }
+
+    /**
+     * Retrieve the label for a given order status code.
+     *
+     * @param string $statusCode
+     * @return string
+     */
+    public function getStatusLabelByCode($statusCode)
+    {
+        try {
+            // Retrieve and return the status label
+            return $this->statusLabelFactory->create()->getLabel($statusCode);
+        } catch (\Exception $e) {
+            // Return a default value or log error if needed
+            return 'Unknown Status';
+        }
     }
 }

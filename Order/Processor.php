@@ -158,7 +158,10 @@ class Processor
             }
 
             $order->addStatusHistoryComment(
-                "NoFraud updated order status to " .  $noFraudOrderStatus . " due to a decision of " . $noFraudresponse
+                "NoFraud updated order status to " .
+                $noFraudOrderStatus .
+                " due to a decision of " .
+                $this->dataHelper->getStatusLabelByCode($noFraudresponse)
             );
         }
     }
