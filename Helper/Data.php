@@ -9,7 +9,7 @@ use Magento\Framework\Filesystem\Io\File;
 use Magento\Framework\Filesystem;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Filesystem\Directory\WriteInterface;
-use Magento\Sales\Model\Order\Status\LabelFactory;
+use Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
@@ -50,7 +50,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param ObjectManagerInterface $objectManager
      * @param File $file
      * @param Filesystem $filesystem
-     * @param LabelFactory $statusLabelFactory
+     * @param LabelFactory $statusCollectionFactory
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
@@ -58,7 +58,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         ObjectManagerInterface $objectManager,
         File $file,
         Filesystem $filesystem,
-        LabelFactory $statusLabelFactory
+        CollectionFactory $statusCollectionFactory
     ) {
         $this->directoryList = $directoryList;
         $this->objectManager = $objectManager;
@@ -66,7 +66,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $this->_directory = $filesystem->getDirectoryWrite(
             DirectoryList::VAR_DIR
         );
-        $this->statusLabelFactory = $statusLabelFactory;
+        $this->statusCollectionFactory = $statusCollectionFactory;
         parent::__construct($context);
     }
     /**
@@ -205,12 +205,15 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function getStatusLabelByCode($statusCode)
     {
-        try {
-            // Retrieve and return the status label
-            return $this->statusLabelFactory->create()->getLabel($statusCode);
-        } catch (\Exception $e) {
-            // Return a default value or log error if needed
-            return 'Unknown Status';
+        // Retrieve the collection of statuses and build a lookup array
+        $statusLabels = [];
+        $statuses = $this->statusCollectionFactory->create();
+        
+        foreach ($statuses as $status) {
+            $statusLabels[$status->getStatus()] = $status->getLabel();
         }
+
+        // Return the label based on the provided status code, or 'Unknown Status' if not found
+        return $statusLabels[$statusCode] ?? 'Unknown Status';
     }
 }
