@@ -19,6 +19,8 @@
                 comment="NoFraud screened order status"/>
                 <column xsi:type="text" name="nofraud_transaction_id" nullable="false" 
                 comment="NoFraud screened order transaction id"/>
+                <column xsi:type="boolean" name="nofraud_is_refund_failed" nullable="false"
+                default="0" comment="NoFraud screened order refund/void status"/>
         </table>
         <table name="sales_order_grid" resource="sales" engine="innodb" comment="Sales Flat Order Grid">
                 <column xsi:type="boolean" name="nofraud_screened" nullable="false" 
