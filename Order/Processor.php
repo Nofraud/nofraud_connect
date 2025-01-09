@@ -188,6 +188,7 @@ class Processor
             if (!$this->refundOrder($order)) {
                 $order->setNofraudIsRefundFailed(true);
                 $order->addStatusHistoryComment("NoFraud was unable to refund/void the order.");
+                $order->save();
             }
 
             if (!$this->_runCustomAutoCancel($order) && $order->canCancel()) {
