@@ -65,6 +65,7 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
         if ($invoice->canRefund()) {
             try {
                 $this->attemptRefund($invoice);
+                $order->addStatusHistoryComment("NoFraud triggered a refund due to a fail decision.");
             } catch (\Exception $refundException) {
                 // Log refund exception
                 $this->logger->logRefundException($refundException, $order->getId());
@@ -89,6 +90,7 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
         } elseif ($invoice->canVoid()) {
             try {
                 $this->attemptVoid($invoice);
+                $order->addStatusHistoryComment("NoFraud triggered a void due to a fail decision.");
             } catch (InvoiceVoidException $voidException) {
                 $this->logger->logRefundException($voidException, $order->getId());
 
