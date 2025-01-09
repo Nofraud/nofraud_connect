@@ -202,13 +202,6 @@ class Processor
 
             if ($order->canCancel()) {
                 $order->cancel();
-
-                if (!$isCron) {
-                    $order->setNofraudStatus($decision);
-                    $order->setState(Order::STATE_CANCELED);
-                    $order->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CANCELED));
-                }
-                
                 $order->addStatusHistoryComment("NoFraud triggered order cancellation due to fail decision.");
                 $order->save();
 
