@@ -185,7 +185,11 @@ class Processor
         if ($decision == 'fail' || $decision == 'fraudulent') {
             $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
 
-            if (!$this->_runCustomAutoCancel($order) && $order->canCancel()) {
+            if ($this->_runCustomAutoCancel($order)) {
+                return true;
+            }
+
+            if ($order->canCancel()) {
                 $this->refundOrder($order);
                 $order->cancel();
                 $order->setNofraudStatus($decision);
@@ -197,7 +201,10 @@ class Processor
                 return true;
             } elseif (!$this->refundOrder($order)) {
                 $order->setNofraudIsRefundFailed(true);
-                $order->addStatusHistoryComment("NoFraud attempted to cancel & refund the order but was unable to do so. A re-attempt will be made.");
+                $order->addStatusHistoryComment(
+                    "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
+                    "A re-attempt will be made."
+                );
                 $order->save();
             }
         }
