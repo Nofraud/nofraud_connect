@@ -213,6 +213,9 @@ class Processor
             }
 
             if ($refundFailed) {
+                if ($order->getStatus() === ORDER::STATUS_FRAUD) {
+                    $order->setState(Order::STATE_PAYMENT_REVIEW);
+                }
                 $order->setNofraudIsRefundFailed(true);
                 $order->addStatusHistoryComment(
                     "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
