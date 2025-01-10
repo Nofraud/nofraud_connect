@@ -214,7 +214,7 @@ class Processor
 
             if ($refundFailed) {
                 if ($order->getStatus() === ORDER::STATUS_FRAUD) {
-                    $order->setState(Order::STATE_PAYMENT_REVIEW);
+                    $order->setState(ORDER::STATE_PAYMENT_REVIEW);
                 }
                 $order->setNofraudIsRefundFailed(true);
                 $order->addStatusHistoryComment(
