@@ -216,7 +216,7 @@ class Processor
 
             if ($refundFailed) {
                 if ($order->getStatus() === ORDER::STATUS_FRAUD) {
-                    $order->setState(Order::STATE_PAYMENT_REVIEW);
+                    $order->setState(ORDER::STATE_PAYMENT_REVIEW);
                     $payment = $order->getPayment();
                     if ($payment->getMethod() === self::BRAINTREE_CODE) {
                         $payment->deny();
