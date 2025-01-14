@@ -60,6 +60,8 @@ class Processor
 
     private const CYBERSOURCE_METHOD_CODE = 'md_cybersource';
 
+    private const BRAINTREE_CODE = 'braintree';
+
     /**
      * Constructor
      *
@@ -214,17 +216,23 @@ class Processor
 
             if ($refundFailed) {
                 if ($order->getStatus() === ORDER::STATUS_FRAUD) {
-                    $order->setState(ORDER::STATE_PAYMENT_REVIEW);
+                    $order->setState(Order::STATE_PAYMENT_REVIEW);
+                    $payment = $order->getPayment();
+                    if ($payment->getMethod() === self::BRAINTREE_CODE) {
+                        $payment->deny();
+                        $order->save();
+                        return true;
+                    }
+                    $order->setNofraudIsRefundFailed(true);
+                    $order->addStatusHistoryComment(
+                        "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
+                        "A re-attempt will be made."
+                    );
+                    $order->save();
                 }
-                $order->setNofraudIsRefundFailed(true);
-                $order->addStatusHistoryComment(
-                    "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
-                    "A re-attempt will be made."
-                );
-                $order->save();
             }
+            return false;
         }
-        return false;
     }
 
     /**
@@ -284,15 +292,13 @@ class Processor
                 } catch (\Exception $e) {
                     $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
                     return (object)[
-                    'success' => false,
-                    'hasInvoices' => (bool)$invoices->count()
+                    'success' => false
                     ];
                 }
             }
         }
         return (object) [
-        'success' => true,
-        'hasInvoices' => (bool)$invoices->count()
+        'success' => true
         ];
     }
 
