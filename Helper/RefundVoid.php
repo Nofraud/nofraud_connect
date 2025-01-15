@@ -65,6 +65,9 @@ class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
         if ($invoice->canRefund()) {
             try {
                 $this->attemptRefund($invoice);
+                // Set order status to closed if refund successful
+                $order->setState(Order::STATE_CLOSED)
+                ->setStatus($order->getConfig()->getStateDefaultStatus(Order::STATE_CLOSED));
                 $order->addStatusHistoryComment("NoFraud triggered a refund due to a fail decision.");
             } catch (\Exception $refundException) {
                 // Log refund exception
