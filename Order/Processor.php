@@ -198,7 +198,7 @@ class Processor
             $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
             $refundFailed = false;
 
-            if ($this->_runCustomAutoCancel($order)) {
+            if ($this->_runCustomAutoCancel(order: $order)) {
                 return true;
             }
 
@@ -219,6 +219,7 @@ class Processor
                     $order->setState(ORDER::STATE_PAYMENT_REVIEW);
                     $payment = $order->getPayment();
                     if ($payment->getMethod() === self::BRAINTREE_CODE) {
+                        $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied");
                         $payment->deny();
                         $order->save();
                         return true;
