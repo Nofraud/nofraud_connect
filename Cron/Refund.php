@@ -2,12 +2,15 @@
 
 namespace NoFraud\Connect\Cron;
 
+use \NoFraud\Connect\Order\Processor;
+
 class Refund
 {
     /**
      * @var Orders
      */
     private $orders;
+
     /**
      * @var StoreManager
      */
@@ -44,7 +47,7 @@ class Refund
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \NoFraud\Connect\Helper\Config $configHelper,
         \NoFraud\Connect\Helper\Data $dataHelper,
-        \NoFraud\Connect\Order\Processor $orderProcessor,
+        Processor $orderProcessor,
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
     ) {
         $this->orders = $orders;
@@ -98,9 +101,15 @@ class Refund
     private function attemptOrderRefund($orders)
     {
         foreach ($orders as $order) {
-            if ($this->orderProcessor->refundOrder($order)->success) {
+            $payment = $order->getPayment();
+            if ($payment->getMethod() === Processor::BRAINTREE_CODE) {
+                $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Braintree Payment denied by refund cron");
+                $payment->deny();
+                $order->setNofraudIsRefundFailed(0)->save();
+            } elseif ($this->orderProcessor->refundOrder($order)->success) {
                 $order->setNofraudIsRefundFailed(0)->save();
             }
+            
         }
     }
 }

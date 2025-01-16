@@ -225,8 +225,9 @@ class Processor
                 $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied");
                 if ($isCron) {
                     $payment->deny();
+                    return true;
                 }
-                return true;
+                
             }
             $order->setNofraudIsRefundFailed(true);
             $order->addStatusHistoryComment(
