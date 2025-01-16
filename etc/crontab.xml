@@ -19,7 +19,7 @@
             <config_path>nofraud_connect/order_email_review/cron_expression</config_path>
         </job>
         <job name="nofraud_payment_refund" instance="NoFraud\Connect\Cron\Refund" method="execute">
-            <schedule>* * * * *</schedule>
+            <schedule>0 * * * *</schedule>
         </job>
     </group>
 </config>
