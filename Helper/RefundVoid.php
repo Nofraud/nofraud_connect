@@ -10,6 +10,7 @@ namespace NoFraud\Connect\Helper;
 use NoFraud\Connect\Exception\InvoiceRefundException;
 use NoFraud\Connect\Exception\InvoiceVoidException;
 use NoFraud\Connect\Exception\InvoiceRefundOrVoidException;
+use \Magento\Sales\Model\Order;
 
 class RefundVoid extends \Magento\Framework\App\Helper\AbstractHelper
 {
