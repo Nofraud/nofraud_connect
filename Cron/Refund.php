@@ -34,6 +34,10 @@ class Refund
      * @var \Magento\Sales\Api\OrderRepositoryInterface
      */
     private $orderRepository;
+    /**
+     * @var OrderStatusFactory
+     */
+    private $orderStatusFactory;
 
     /**
      * Constructor
@@ -44,6 +48,7 @@ class Refund
      * @param \NoFraud\Connect\Helper\Data $dataHelper
      * @param \NoFraud\Connect\Order\Processor $orderProcessor
      * @param \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
+     * @param \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory
      */
     public function __construct(
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactory $orders,
@@ -51,7 +56,8 @@ class Refund
         \NoFraud\Connect\Helper\Config $configHelper,
         \NoFraud\Connect\Helper\Data $dataHelper,
         Processor $orderProcessor,
-        \Magento\Sales\Api\OrderRepositoryInterface $orderRepository
+        \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
+        \Magento\Sales\Model\Order\StatusFactory $orderStatusFactory,
     ) {
         $this->orders = $orders;
         $this->storeManager = $storeManager;
@@ -59,6 +65,7 @@ class Refund
         $this->dataHelper = $dataHelper;
         $this->orderProcessor = $orderProcessor;
         $this->orderRepository = $orderRepository;
+        $this->orderStatusFactory = $orderStatusFactory;
     }
 
     /**
