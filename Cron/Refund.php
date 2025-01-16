@@ -113,12 +113,17 @@ class Refund
         foreach ($orders as $order) {
             $payment = $order->getPayment();
             if ($payment->getMethod() === self::BRAINTREE_CODE) {
-                $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Braintree Payment denied by refund cron");
-                $payment->deny();
-                $status = $this->orderStatusFactory->create()->loadDefaultByState(Order::STATE_CANCELED)->getStatus();
-                $order->setState(Order::STATE_CANCELED);
-                $order->setStatus($status);
-                $order->setNofraudIsRefundFailed(0)->save();
+                try {
+                    $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Braintree Payment denied by refund cron");
+                    $payment->deny();
+                    $status = $this->orderStatusFactory->create()->loadDefaultByState(Order::STATE_CANCELED)->getStatus();
+                    $order->setState(Order::STATE_CANCELED);
+                    $order->setStatus($status);
+                    $order->setNofraudIsRefundFailed(0)->save();
+                } catch (\Exception $e) {
+                    $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Braintree Payment refund failed");
+                    $order->setNofraudIsRefundFailed(0)->save();
+                }
             } elseif ($this->orderProcessor->refundOrder($order)->success) {
                 $order->setNofraudIsRefundFailed(0)->save();
             }
