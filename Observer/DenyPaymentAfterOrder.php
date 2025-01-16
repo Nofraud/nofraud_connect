@@ -44,7 +44,7 @@ class DenyPaymentAfterOrder implements ObserverInterface
         // so the Thank You page is already shown to the customer.
 
         try {
-            if ($isRefundOnline && $payment->getMethod() === self::BRAINTREE_CODE) {
+            if ($isRefundOnline && $payment->getMethod() === self::BRAINTREE_CODE && $order->getNofraudStatus() === 'fail') {
                 $payment->deny();
             }
         } catch (\Exception $e) {
