@@ -189,51 +189,52 @@ class Processor
      *
      * @param mixed $order
      * @param mixed $decision
-     * @param bool  $isCron
      */
-    public function handleAutoCancel($order, $decision, $isCron = false)
+    public function handleAutoCancel($order, $decision)
     {
-        // if order failed NoFraud check, try to refund and cancel order
-        if ($decision == 'fail' || $decision == 'fraudulent') {
-            $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
-            $refundFailed = false;
-
-            if ($this->_runCustomAutoCancel(order: $order)) {
-                return true;
-            }
-
-            if (!$this->refundOrder($order)->success) {
-                $refundFailed = true;
-            }
-
-            if ($order->canCancel()) {
-                $order->cancel();
-                $order->addStatusHistoryComment("NoFraud triggered order cancellation due to fail decision.");
-                $order->save();
-
-                return true;
-            }
-
-            if ($refundFailed) {
-                if ($order->getStatus() === ORDER::STATUS_FRAUD) {
-                    $order->setState(ORDER::STATE_PAYMENT_REVIEW);
-                    $payment = $order->getPayment();
-                    if ($payment->getMethod() === self::BRAINTREE_CODE) {
-                        $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied");
-                        $payment->deny();
-                        $order->save();
-                        return true;
-                    }
-                    $order->setNofraudIsRefundFailed(true);
-                    $order->addStatusHistoryComment(
-                        "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
-                        "A re-attempt will be made."
-                    );
-                    $order->save();
-                }
-            }
+        if ($decision != 'fail' && $decision != 'fraudulent') {
             return false;
         }
+
+        // if order failed NoFraud check, try to refund and cancel order
+        $this->dataHelper->addDataToLog("Auto-canceling Order#" . $order->getIncrementId());
+        $refundFailed = false;
+
+        if ($this->_runCustomAutoCancel(order: $order)) {
+            return true;
+        }
+
+        // Try to refund/void the invoices on the order (if any)
+        if (!$this->refundOrder($order)->success) {
+            $refundFailed = true;
+        }
+
+        // Try to cancel the order (will attempt to void the authorization if possible)
+        if ($order->canCancel()) {
+            $order->cancel();
+            $order->addStatusHistoryComment("NoFraud triggered order cancellation due to fail decision.");
+            $order->save();
+
+            return true;
+        }
+
+        if ($refundFailed) {
+            $payment = $order->getPayment();
+            if ($payment->getMethod() === self::BRAINTREE_CODE) {
+                $order->setStatus(ORDER::STATUS_FRAUD)->setState(ORDER::STATE_PAYMENT_REVIEW)->save();
+                $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied");
+                $payment->deny();
+                return true;
+            }
+            $order->setNofraudIsRefundFailed(true);
+            $order->addStatusHistoryComment(
+                "NoFraud attempted to cancel & refund/void the order but was unable to do so. " .
+                "A re-attempt will be made."
+            );
+            $order->save();
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -292,14 +293,14 @@ class Processor
                     $this->refundVoidHelper->handleSingleInvoice($invoice, $order);
                 } catch (\Exception $e) {
                     $this->dataHelper->addDataToLog("Order " . $order->getIncrementId() . ": " . $e->getMessage());
-                    return (object)[
-                    'success' => false
+                    return (object) [
+                        'success' => false
                     ];
                 }
             }
         }
         return (object) [
-        'success' => true
+            'success' => true
         ];
     }
 
