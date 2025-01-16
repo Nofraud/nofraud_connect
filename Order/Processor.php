@@ -222,12 +222,11 @@ class Processor
             $payment = $order->getPayment();
             if ($payment->getMethod() === self::BRAINTREE_CODE) {
                 $order->setStatus(ORDER::STATUS_FRAUD)->setState(ORDER::STATE_PAYMENT_REVIEW)->save();
-                $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied");
                 if ($isCron) {
                     $payment->deny();
+                    $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied by status update cron");
                     return true;
                 }
-                
             }
             $order->setNofraudIsRefundFailed(true);
             $order->addStatusHistoryComment(

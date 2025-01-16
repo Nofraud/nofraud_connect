@@ -6,6 +6,8 @@ use \NoFraud\Connect\Order\Processor;
 
 class Refund
 {
+    private const BRAINTREE_CODE = 'braintree';
+    
     /**
      * @var Orders
      */
@@ -102,7 +104,7 @@ class Refund
     {
         foreach ($orders as $order) {
             $payment = $order->getPayment();
-            if ($payment->getMethod() === Processor::BRAINTREE_CODE) {
+            if ($payment->getMethod() === self::BRAINTREE_CODE) {
                 $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Braintree Payment denied by refund cron");
                 $payment->deny();
                 $order->setNofraudIsRefundFailed(0)->save();
