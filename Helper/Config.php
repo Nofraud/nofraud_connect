@@ -156,7 +156,7 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
      * @param mixed $storeId
      * @return void
      */
-    public function getRefundOnline($storeId = null)
+    public function getRefundOnline($storeId = null): bool
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_REFUND_ONLINE, $storeId);
     }

@@ -172,7 +172,7 @@ class OrderFraudStatus
 
                 $order->save();
 
-                $fullOrder =$this->orderRepository->get($order->getId());
+                $fullOrder = $this->orderRepository->get($order->getId());
                 // If a decision was returned by the API, handle it, else handle error.
                 if ($decision) {
                     $this->handleDecisionBasedUpdates($fullOrder, $decision, $newStatus, $response, $storeId);

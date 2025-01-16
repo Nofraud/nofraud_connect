@@ -190,7 +190,7 @@ class Processor
      * @param mixed $order
      * @param mixed $decision
      */
-    public function handleAutoCancel($order, $decision)
+    public function handleAutoCancel($order, $decision, $isCron = false)
     {
         if ($decision != 'fail' && $decision != 'fraudulent') {
             return false;
@@ -223,7 +223,9 @@ class Processor
             if ($payment->getMethod() === self::BRAINTREE_CODE) {
                 $order->setStatus(ORDER::STATUS_FRAUD)->setState(ORDER::STATE_PAYMENT_REVIEW)->save();
                 $this->dataHelper->addDataToLog("Order#" . $order->getIncrementId() . " Payment denied");
-                $payment->deny();
+                if ($isCron) {
+                    $payment->deny();
+                }
                 return true;
             }
             $order->setNofraudIsRefundFailed(true);
