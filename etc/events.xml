@@ -14,6 +14,6 @@ xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
         instance="NoFraud\Connect\Observer\NofruadPlaceAfterOrderObserver" />
     </event>
     <event name="checkout_submit_after">
-        <observer name="NoFraud_Connect_After_Checkout_Observer" instance="Vendor\Module\Observer\DenyPaymentAfterOrder" />
+        <observer name="NoFraud_Connect_After_Checkout_Observer" instance="NoFraud\Connect\Observer\DenyPaymentAfterOrder" />
     </event>
  </config>
