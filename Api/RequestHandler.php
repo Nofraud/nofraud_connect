@@ -151,17 +151,31 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
             $baseParams['cvvResultCode'] = $payment->getCcCidStatus();
         }
 
+        $this->logger->info("Base Params for order {$order->getIncrementId()}: " . json_encode($baseParams));
+
         return $baseParams;
     }
 
     private function getPaymentAttempts($order): int|null
     {
         try {
-            $quote = $this->quoteFactory->create()->load($order->getQuoteId());
-            $cardAttempts = $quote->getNofraudFailedPaymentAttempts();
-            if (is_int($cardAttempts)) {
-                return $cardAttempts + 1;
+            $quoteId = $order->getQuoteId();
+
+            if (!$quoteId) {
+                $this->logger->error("Order has no associated quote ID.");
+                return null;
             }
+
+            $quote = $this->quoteFactory->create()->load($quoteId);
+
+            $cardAttempts = $quote->getNofraudFailedPaymentAttempts();
+
+            if (!is_numeric($cardAttempts) || $cardAttempts < 0) {
+                $this->logger->error("Invalid payment attempt count ({$cardAttempts}) for quote ID {$quoteId}.");
+                return null;
+            }
+
+            return (int)$cardAttempts + 1;
         } catch (\Exception $e) {
             $this->logger->error("Failed to get payment attempts: " . $e->getMessage());
         }
