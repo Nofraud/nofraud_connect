@@ -1,3 +1,20 @@
+# [1.7.0](https://github.com/Nofraud/nofraud_connect/compare/v1.6.0...v1.7.0) (2025-03-19)
+
+
+### Bug Fixes
+
+* Appropriately log refund error message. ([d6dbed3](https://github.com/Nofraud/nofraud_connect/commit/d6dbed3d0844a5d3d23e9e05bd68c2332da75bcf))
+* Attempt to void the payment if refund fails ([74bf4e1](https://github.com/Nofraud/nofraud_connect/commit/74bf4e1fffd850982091192936e439af940d9a8f))
+* Handle casting of cardAttempts from string to int. ([07e7126](https://github.com/Nofraud/nofraud_connect/commit/07e712672f544e3373448a821c5ad4b634a822b7))
+* Prevent Authnet plugin from transitioning status in conflict with ([376bb90](https://github.com/Nofraud/nofraud_connect/commit/376bb90ae39ad6ba12e8d13bf0f8c741f47be286))
+* Utilize full order object in cron context to allow for proper order refund, void & cancellation ([3ca22e1](https://github.com/Nofraud/nofraud_connect/commit/3ca22e177bbb60c76349595cd40fdf3e7a663bbf))
+
+
+### Features
+
+* Add cron to retry refunds daily for orders that have not yet settled. ([8ac69e4](https://github.com/Nofraud/nofraud_connect/commit/8ac69e457b0c2925ec070cf0249ff1df8b960940))
+* Track failed payment attempts and send to API. ([3b8e751](https://github.com/Nofraud/nofraud_connect/commit/3b8e7515e3773f5da2df36af377fc2f0b193b29a))
+
 # [1.6.0](https://github.com/Nofraud/nofraud_connect/compare/v1.5.0...v1.6.0) (2025-01-07)
 
 
