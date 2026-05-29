@@ -51,6 +51,25 @@ Log files:
 
 Enable debug logging at **Stores > Configuration > NoFraud > Connect > Advanced NoFraud Connect Settings > Debug**.
 
+## Testing
+
+The module includes a PHPUnit test suite focused on security invariants (token handling, logging safety).
+
+**Inside a Magento installation** (where `vendor/` is populated):
+
+```sh
+vendor/bin/phpunit --configuration phpunit.xml
+```
+
+**Standalone** (outside a Magento project): download the PHPUnit PHAR since `composer install` cannot resolve `magento/framework` in isolation — the module is designed to be installed within a Magento project's dependency tree.
+
+```sh
+curl -sSL https://phar.phpunit.de/phpunit-10.phar -o phpunit.phar
+php phpunit.phar --configuration phpunit.xml
+```
+
+The standalone setup uses minimal Magento class stubs in `Test/Stubs/` so PHPUnit can mock framework types without the full Magento installation.
+
 ## Support
 
 - Email: support@nofraud.com

@@ -16,12 +16,20 @@
         "php": ">7.0.1",
         "magento/framework": ">100.1.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0 || ^10.0"
+    },
     "autoload": {
         "files": [
             "registration.php"
         ],
         "psr-4": {
             "NoFraud\\Connect\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NoFraud\\Connect\\Test\\": "Test/"
         }
     }
 }
