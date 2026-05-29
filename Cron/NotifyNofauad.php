@@ -38,6 +38,10 @@ class NotifyNofauad
      * @var scopeConfig
      */
     protected $scopeConfig;
+    /**
+     * @var \NoFraud\Connect\Logger\Logger
+     */
+    protected $logger;
 
     /**
      * Constructor
@@ -47,19 +51,22 @@ class NotifyNofauad
      * @param StoreManagerInterface $storeManager
      * @param StateInterface $state
      * @param ScopeConfigInterface $scopeConfig
+     * @param \NoFraud\Connect\Logger\Logger $logger
      */
     public function __construct(
         TransportBuilder $transportBuilder,
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactory $orderCollectionFactory,
         StoreManagerInterface $storeManager,
         StateInterface $state,
-        ScopeConfigInterface $scopeConfig
+        ScopeConfigInterface $scopeConfig,
+        \NoFraud\Connect\Logger\Logger $logger
     ) {
         $this->transportBuilder = $transportBuilder;
         $this->storeManager = $storeManager;
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->inlineTranslation = $state;
         $this->scopeConfig = $scopeConfig;
+        $this->logger = $logger;
     }
 
     /**
@@ -142,7 +149,7 @@ class NotifyNofauad
 
             $this->inlineTranslation->resume();
         } catch (\Exception $e) {
-            error_log("\n" . $e->getMessage(), 3, BP . "/var/log/orderIds-error.log");
+            $this->logger->critical("NotifyNoFraud email error: " . $e->getMessage());
         }
     }
 }

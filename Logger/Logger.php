@@ -61,20 +61,13 @@ class Logger extends \Monolog\Logger
     /**
      * Log Api Error
      *
-     * @param mixed $apiUrl
-     * @param mixed $curlError
-     * @param mixed $responseCode
-     * @param mixed $params
+     * @param string $apiUrl
+     * @param string $curlError
+     * @param int|string $responseCode
      */
-    public function logApiError($apiUrl, $curlError, $responseCode, $params = null)
+    public function logApiError($apiUrl, $curlError, $responseCode)
     {
-        $this->critical("Encountered an exception while sending an API request. Here is the API url: {$apiUrl}");
-        $this->critical("Encountered an exception while sending an API request. Here are the parameters: ");
-        $this->critical($params);
-        $this->critical("Encountered an exception while sending an API request. Here is the response code: ");
-        $this->critical($responseCode);
-        $this->critical("Encountered an exception while sending an API request. Here is the exception: ");
-        $this->critical($curlError);
+        $this->critical("API request exception — URL: {$apiUrl}, response code: {$responseCode}, error: {$curlError}");
     }
 
     /**

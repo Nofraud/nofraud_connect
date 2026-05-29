@@ -36,13 +36,10 @@ class ApiUrl
      * Build Order Api Url
      *
      * @param string $orderInfoRequest | Info wanted from order e.x. 'status'
-     * @param string $apiToken | API Token
      */
-    public function buildOrderApiUrl($orderInfoRequest, $apiToken)
+    public function buildOrderApiUrl($orderInfoRequest)
     {
-        $apiBaseUrl = $this->whichEnvironmentUrl();
-        $apiUrl = $apiBaseUrl . $orderInfoRequest . '/' . $apiToken;
-        return $apiUrl;
+        return $this->whichEnvironmentUrl() . $orderInfoRequest;
     }
 
     /**

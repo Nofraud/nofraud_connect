@@ -94,13 +94,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      *
      * @param \Magento\Sales\Model\Order\Payment $payment
      * @param \Magento\Sales\Model\Order $order
-     * @param string $apiToken | NoFraud API Token
      *
      * @return array
      */
-    public function build($payment, $order, $apiToken)
+    public function build($payment, $order)
     {
-        $params = $this->buildBaseParams($payment, $order, $apiToken);
+        $params = $this->buildBaseParams($payment, $order);
         $params['customer'] = $this->buildCustomerParams($order);
         $params['order'] = $this->buildOrderParams($order);
         $params['payment'] = $this->buildPaymentParams($payment);
@@ -119,10 +118,9 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      *
      * @param \Magento\Sales\Model\Order\Payment $payment
      * @param \Magento\Sales\Model\Order $order
-     * @param string $apiToken | NoFraud API Token
-     * @return void
+     * @return array
      */
-    protected function buildBaseParams($payment, $order, $apiToken)
+    protected function buildBaseParams($payment, $order)
     {
         $baseParams = [];
 
@@ -135,7 +133,6 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         }
 
         $baseParams['cardAttempts'] = $this->getPaymentAttempts($order);
-        $baseParams['nf-token'] = $apiToken;
         $baseParams['amount'] = $this->formatTotal($order->getGrandTotal());
         $baseParams['currency_code'] = $order->getOrderCurrencyCode();
         $baseParams['shippingAmount'] = $this->formatTotal($order->getShippingAmount());
@@ -150,8 +147,6 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         if (!empty($payment->getCcCidStatus())) {
             $baseParams['cvvResultCode'] = $payment->getCcCidStatus();
         }
-
-        $this->logger->info("Base Params for order {$order->getIncrementId()}: " . json_encode($baseParams));
 
         return $baseParams;
     }

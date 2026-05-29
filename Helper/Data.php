@@ -171,10 +171,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $baseVarDir = $this->directoryList->getPath("var");
         if (!$this->_directory->isDirectory("log")) {
-            $this->file->mkdir($baseVarDir . "/log", 0777);
+            $this->file->mkdir($baseVarDir . "/log", 0750);
         }
         if (!$this->_directory->isDirectory("log/nofraud_connect")) {
-            $this->file->mkdir($baseVarDir . "/log/nofraud_connect", 0777);
+            $this->file->mkdir($baseVarDir . "/log/nofraud_connect", 0750);
         }
         $productMetadata = $this->objectManager->get(
             ProductMetadataInterface::class
