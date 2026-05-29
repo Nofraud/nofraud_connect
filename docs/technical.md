@@ -1,7 +1,7 @@
 # NoFraud Connect (M2) - Technical Documentation
 
 > **Module:** `NoFraud_Connect` | **Composer:** `nofraud/connect` | **Version:** 1.7.0  
-> **PHP:** >=7.0.1 | **Framework:** Magento 2 (>=100.1.0)
+> **PHP:** 8.1–8.4 | **Framework:** Magento 2.4.x (`magento/framework ^103.0`)
 
 ## Table of Contents
 
@@ -50,6 +50,7 @@
   - [UI Components](#ui-components)
   - [Exceptions](#exceptions)
 - [CI/CD & Release Process](#cicd--release-process)
+- [Dependency Governance](#dependency-governance)
 
 ---
 
@@ -1023,7 +1024,52 @@ The project uses [semantic-release](https://github.com/semantic-release/semantic
 |----------|---------|---------|
 | `phpcs.yml` | PR with `.php` changes | Magento 2 coding standard enforcement |
 | `version-check.yaml` | All PRs | Blocks manual `composer.json` version changes |
+| `composer-audit.yml` | PR with `composer.json` changes + weekly schedule | Validates `composer.json` and checks for security advisories |
+
+All GitHub Actions are pinned to full commit SHAs (not floating tags) to prevent supply-chain attacks. Version comments (`# v4`) are included for readability.
 
 ### Pre-commit
 
 Configured via `.pre-commit-config.yaml` (hooks not detailed in repo — file exists but content not analyzed).
+
+## Dependency Governance
+
+### Declared Dependencies
+
+This module declares only two production dependencies:
+
+| Package | Constraint | Notes |
+|---------|-----------|-------|
+| `php` | `~8.1.0 \|\| ~8.2.0 \|\| ~8.3.0 \|\| ~8.4.0` | Matches Magento 2.4.4+ supported PHP versions |
+| `magento/framework` | `^103.0` | Maps to the Magento 2.4.x line |
+
+Dev dependency: `phpunit/phpunit ^10.0` (test framework).
+
+The module has no third-party PHP library dependencies. All transitive dependencies (Laminas, Monolog, etc.) are provided by `magento/framework` at the application level.
+
+### Why No `composer.lock`
+
+This is a **library** (`magento2-module`), not an application. It is installed as a dependency within a merchant's Magento project. The merchant's application generates the lock file and controls dependency resolution. Committing a lock file in a library is an anti-pattern.
+
+### Supported Version Matrix
+
+| Magento | PHP | `magento/framework` |
+|---------|-----|---------------------|
+| 2.4.4–2.4.5 | 8.1 | 103.0.4–103.0.5 |
+| 2.4.6 | 8.1, 8.2 | 103.0.6 |
+| 2.4.7 | 8.2, 8.3 | 103.0.7 |
+| 2.4.8 | 8.3, 8.4 | 103.0.8 |
+
+### CI Audit Pipeline
+
+The `composer-audit.yml` workflow runs `composer validate` and `composer audit` on every PR that touches `composer.json`, plus weekly. This checks direct dependency advisories.
+
+**Limitations:** Without a resolved lock file, `composer audit` only checks direct dependencies. For full transitive dependency auditing (Laminas, Monolog, Guzzle, etc.), merchants must run `composer audit` at their Magento project root.
+
+### Updating Constraints
+
+When Adobe releases a new Magento version with a new PHP version:
+
+1. Verify the module works on the new PHP version
+2. Add the new PHP minor to the `php` constraint (e.g., add `|| ~8.5.0`)
+3. Commit with `feat:` prefix for a minor version bump

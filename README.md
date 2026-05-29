@@ -4,6 +4,13 @@ Integrates NoFraud's post-payment-gateway API functionality into Magento 2.
 
 > **Technical Documentation:** For architecture diagrams, API layer details, class reference, database schema, cron jobs, payment method integrations, and full configuration reference, see **[docs/technical.md](docs/technical.md)**.
 
+## Requirements
+
+| Requirement | Version |
+|-------------|---------|
+| PHP | 8.1, 8.2, 8.3, or 8.4 |
+| Magento | 2.4.4+ |
+
 ## Installation
 
 Using Composer (recommended):

@@ -4,7 +4,8 @@ on:
     branches:
       - master
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   release:
@@ -13,10 +14,10 @@ jobs:
     # Skip running release workflow on forks
     if: github.repository_owner == 'Nofraud'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "lts/*"
       - run: npm install -g semantic-release @semantic-release/github @semantic-release/git @semantic-release/changelog @iwavesmedia/semantic-release-composer

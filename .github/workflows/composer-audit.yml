@@ -1,0 +1,40 @@
+name: Composer Audit
+
+on:
+  pull_request:
+    paths:
+      - "composer.json"
+  schedule:
+    # Weekly on Monday at 9am UTC
+    - cron: "0 9 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
+        with:
+          php-version: "8.1"
+          tools: composer:v2
+
+      # --strict omitted: the `version` field triggers a warning but is
+      # intentionally present (managed by semantic-release).
+      - name: Validate composer.json
+        run: composer validate
+
+      # This module has no composer.lock (correct for a library — the merchant's
+      # Magento project resolves and locks dependencies). Without a lock file,
+      # `composer audit` only checks direct dependency advisories. For full
+      # transitive auditing, merchants must run `composer audit` at their
+      # Magento project root.
+      - name: Check for security advisories
+        run: |
+          echo "::notice::This module is a library with no composer.lock. Only direct dependency advisories are checked. Merchants must run composer audit at their Magento project root for full transitive coverage."
+          composer audit --format=plain
