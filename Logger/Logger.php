@@ -15,14 +15,12 @@ class Logger extends \Monolog\Logger
      */
     public function logTransactionResults($order, $payment, $resultMap)
     {
-        $orderLog['id'] = $order->getIncrementId();
-
-        $paymentLog['method'] = $payment->getMethod();
-
         $info = [
-            'order' => $orderLog,
-            'payment' => $paymentLog,
-            'api_result' => $resultMap,
+            'order_id' => $order->getIncrementId(),
+            'payment_method' => $payment->getMethod(),
+            'decision' => $resultMap['http']['response']['body']['decision'] ?? 'unknown',
+            'transaction_id' => $resultMap['http']['response']['body']['id'] ?? null,
+            'response_code' => $resultMap['http']['response']['code'] ?? null,
         ];
 
         $this->info(json_encode($info));
@@ -36,11 +34,10 @@ class Logger extends \Monolog\Logger
      */
     public function logCancelTransactionResults($order, $resultMap)
     {
-        $orderLog['id'] = $order->getIncrementId();
-
         $info = [
-            'order' => $orderLog,
-            'api_result' => $resultMap,
+            'order_id' => $order->getIncrementId(),
+            'transaction_id' => $resultMap['http']['response']['body']['id'] ?? null,
+            'response_code' => $resultMap['http']['response']['code'] ?? null,
         ];
 
         $this->info(json_encode($info));
@@ -55,7 +52,7 @@ class Logger extends \Monolog\Logger
     public function logFailure($order, $exception)
     {
         $orderId = $order->getIncrementId();
-        $this->critical("Encountered an exception while processing Order {$orderId}: \n" . (string) $exception);
+        $this->critical("Encountered an exception while processing Order {$orderId}: " . $exception->getMessage());
     }
 
     /**

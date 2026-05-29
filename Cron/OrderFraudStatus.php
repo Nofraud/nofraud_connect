@@ -152,7 +152,13 @@ class OrderFraudStatus
                 $orderSpecificApiUrl = $apiUrl . '/' . $order['increment_id'];
                 // Fetch the status from the API for the current order.
                 $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE, $apiToken);
-                $this->dataHelper->addDataToLog($response);
+                $this->dataHelper->addDataToLog(sprintf(
+                    "Order#%s API response — decision: %s, transaction_id: %s, response_code: %s",
+                    $order['increment_id'],
+                    $response['http']['response']['body']['decision'] ?? 'unknown',
+                    $response['http']['response']['body']['id'] ?? 'N/A',
+                    $response['http']['response']['code'] ?? 'N/A'
+                ));
 
                 // Check if the response contains the necessary data, skip order if it does not
                 if (!isset($response['http']['response']['body'])) {

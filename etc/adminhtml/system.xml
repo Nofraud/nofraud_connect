@@ -164,10 +164,11 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file
             <group id="order_debug" translate="label" type="text" sortOrder="50"
              showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Advanced Nofraud Connect Settings</label>
-                <field id="debug" translate="label" type="select" sortOrder="40" 
+                <field id="debug" translate="label" type="select" sortOrder="40"
                 showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Debug</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Debug logging is automatically disabled when Checkout Mode is set to Production, regardless of this setting.]]></comment>
                 </field>
                 <field id="list_mode" translate="label" type="select" sortOrder="1" 
                 showInDefault="1" showInWebsite="1" showInStore="1">

@@ -635,24 +635,54 @@ The version fieldset at the top of the config page uses a custom block (`Block\A
 
 | File | Level | Content |
 |------|-------|---------|
-| `var/log/nofraud_connect/info.log` | INFO+ | Transaction results, cancellation results, API errors |
-| `var/log/nofraud_connect/` (custom) | DEBUG | Request/response payloads (when debug mode enabled) |
+| `var/log/nofraud_connect/info.log` | INFO+ | Transaction summaries (debug-only), API errors, exceptions |
+| `var/log/nofraud_connect/log-DD-MM-YYYY.log` | INFO/ERR | Operational debug data, error details (daily rotation) |
+
+Log files are server-side only. Retrieve them via SSH or SFTP — they are not accessible via web URLs.
 
 ### Logger Class
 
 `Logger\Logger` extends `Monolog\Logger` with domain-specific methods:
 
-| Method | When Used |
-|--------|-----------|
-| `logTransactionResults($order, $payment, $resultMap)` | After screening API call |
-| `logCancelTransactionResults($order, $resultMap)` | After cancel notification |
-| `logFailure($order, $exception)` | On critical errors (CRITICAL level) |
-| `logApiError($apiUrl, $curlError, $responseCode)` | On HTTP/cURL failures |
-| `logRefundException($exception, $orderNumber)` | On refund/void failures |
+| Method | When Used | Debug-gated |
+|--------|-----------|-------------|
+| `logTransactionResults($order, $payment, $resultMap)` | After screening API call | Yes (caller-gated) |
+| `logCancelTransactionResults($order, $resultMap)` | After cancel notification | Yes (caller-gated) |
+| `logFailure($order, $exception)` | On critical errors (CRITICAL level) | No — always logs |
+| `logApiError($apiUrl, $curlError, $responseCode)` | On HTTP/cURL failures | No — always logs |
+| `logRefundException($exception, $orderNumber)` | On refund/void failures | No — always logs |
+
+Transaction result methods log only summary fields (order ID, payment method, decision, transaction ID, response code) — not the full API response body. `logFailure` logs only the exception message, not the full stack trace.
 
 ### Debug Mode
 
-Controlled by `nofraud_connect/order_debug/debug`. When enabled, `Helper\Data` logs additional request/response data. The helper is version-aware and uses either `Laminas\Log` (Magento 2.4.3+) or `Zend_Log` for writing to the debug log.
+Controlled by `Helper\Config::isDebugLoggingAllowed()`, which requires **both**:
+
+1. The admin toggle at **Stores > Configuration > NoFraud > Connect > Advanced > Debug** set to Yes
+2. Checkout Mode set to a **non-production** environment (Sandbox, Dev1, or Dev2)
+
+Debug logging is automatically blocked in production checkout mode regardless of the admin toggle. This prevents verbose logging from being accidentally enabled on live stores.
+
+When debug logging is allowed, the following additional data is written to the daily `log-*.log` files via `Helper\Data`:
+
+- `addDataToLog()` — general operational data (debug-gated)
+- `addDebugToLog()` — detailed debug data (debug-gated)
+- `addErrorToLog()` — operational errors such as invoice failures (always-on, not debug-gated)
+
+### Logging Security
+
+**File permissions:**
+
+| Path | Permission | Notes |
+|------|-----------|-------|
+| `var/log/nofraud_connect/` | `0750` | Owner rwx, group rx, no world access |
+| `var/log/nofraud_connect/info.log` | `0640` | Set via Monolog handler `$filePermission` |
+| `var/log/nofraud_connect/log-*.log` | `0640` | Set via stream writer constructor |
+| `var/log/nofraud_connect/.htaccess` | — | Defense-in-depth: blocks Apache 2.2 and 2.4 direct access |
+
+The `.htaccess` file provides defense-in-depth for Apache-based hosts. For nginx, the primary control is webroot/var directory separation (standard in Magento's nginx configuration). Merchants upgrading from earlier versions should verify permissions on existing log directories and files.
+
+**Data redaction:** Transaction logging methods output only summary fields. Full API response bodies, stack traces, and request parameters are never written to logs. API tokens are transmitted via HTTP headers and never appear in log output.
 
 ---
 
@@ -700,6 +730,7 @@ Central configuration accessor. All getters accept optional `$storeId` for store
 | `paymentMethodIsIgnored($method, $storeId)` | `general/screened_payment_methods` | bool |
 | `orderStatusIsIgnored($order, $storeId)` | `general/screened_order_status` | bool |
 | `shouldSkipCustomerGroup($order, $storeId)` | `skip_config/skip_customer_group` | bool |
+| `isDebugLoggingAllowed($storeId)` | `order_debug/debug` + `order_debug/list_mode` | bool |
 | `getCustomStatusConfig($statusName, $storeId)` | `order_statuses/{statusName}` | string |
 
 **API URL Constants:**
@@ -722,10 +753,9 @@ Debug logging utility with version-adaptive logger creation.
 
 | Method | Description |
 |--------|-------------|
-| `addDataToLog($data)` | Logs if debug mode enabled |
-| `addErrorToLog($data)` | Always logs (debug-independent) |
-| `addInfoToLog($data)` | Always logs (debug-independent) |
-| `addDebugToLog($data)` | Logs if debug mode enabled |
+| `addDataToLog($data)` | Logs if debug logging allowed |
+| `addErrorToLog($data)` | Always logs (operational errors) |
+| `addDebugToLog($data)` | Logs if debug logging allowed |
 | `getStatusLabelByCode($statusCode)` | Resolves order status code to human-readable label |
 
 ---

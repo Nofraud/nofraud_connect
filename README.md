@@ -42,14 +42,14 @@ Order status mapping (pass/review/fail/error), customer group skip lists, review
 
 ## Troubleshooting
 
-Log files:
+Log files (retrieve via SSH or SFTP):
 
 | File | Content |
 |------|---------|
-| `var/log/nofraud_connect/info.log` | Transaction results, API errors, cancellation events |
-| `var/log/nofraud_connect/log-*.log` | Debug-level detail (when debug mode is enabled) |
+| `var/log/nofraud_connect/info.log` | Transaction summaries, API errors, exceptions |
+| `var/log/nofraud_connect/log-*.log` | Operational debug detail (when debug mode is enabled) |
 
-Enable debug logging at **Stores > Configuration > NoFraud > Connect > Advanced NoFraud Connect Settings > Debug**.
+Enable debug logging at **Stores > Configuration > NoFraud > Connect > Advanced NoFraud Connect Settings > Debug**. Debug logging is automatically disabled when Checkout Mode is set to Production.
 
 ## Testing
 

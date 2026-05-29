@@ -162,8 +162,9 @@ class NofruadPlaceAfterOrderObserver implements \Magento\Framework\Event\Observe
             // Send the request to the NoFraud API and get response
             $resultMap = $this->requestHandler->send($request, $apiUrl, 'POST', $apiToken);
 
-            // Log request results with associated invoice number
-            $this->logger->logTransactionResults($order, $payment, $resultMap);
+            if ($this->configHelper->isDebugLoggingAllowed($storeId)) {
+                $this->logger->logTransactionResults($order, $payment, $resultMap);
+            }
 
             // Prepare order data from result map
             $data = $this->responseHandler->getTransactionData($resultMap);

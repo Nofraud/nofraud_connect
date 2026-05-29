@@ -19,6 +19,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
     private const GENERAL_AUTH_CAPTURE = self::GENERAL . '/auth_capture';
     private const SKIP_CONFIG_SKIP_CUSTOMER_GROUPS = self::SKIP_CONFIG . '/skip_customer_group';
+    private const ORDER_DEBUG = 'nofraud_connect/order_debug';
+    private const ORDER_DEBUG_ENABLED = self::ORDER_DEBUG . '/debug';
+    private const ORDER_DEBUG_LIST_MODE = self::ORDER_DEBUG . '/list_mode';
 
     private const PRODUCTION_URL = "https://api.nofraud.com/";
 
@@ -109,12 +112,19 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     /**
      * Get Nofruad Connect Mode
      */
-    public function getNofraudAdvanceListMode()
+    public function getNofraudAdvanceListMode($storeId = null)
     {
-        return $this->scopeConfig->getValue(
-            'nofraud_connect/order_debug/list_mode',
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
+        return $this->_getConfigValueByStoreId(self::ORDER_DEBUG_LIST_MODE, $storeId);
+    }
+
+    public function isDebugLoggingAllowed($storeId = null)
+    {
+        $debugEnabled = (bool) $this->_getConfigValueByStoreId(self::ORDER_DEBUG_ENABLED, $storeId);
+        if (!$debugEnabled) {
+            return false;
+        }
+        $checkoutMode = $this->getNofraudAdvanceListMode($storeId);
+        return $checkoutMode !== 'prod';
     }
 
     /**
@@ -239,9 +249,10 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
             $orderStatus = $order->getStatus();
             if (!in_array($orderStatus, $screenedOrderStatus)) {
-                $orderId = $order->getIncrementId();
-                $this->logger->info("\n Ignoring Order $orderId: status is '$orderStatus;'
-                only screening orders with selected screen status.");
+                if ($this->isDebugLoggingAllowed()) {
+                    $orderId = $order->getIncrementId();
+                    $this->logger->info("Ignoring Order {$orderId}: status is '{$orderStatus}'; only screening orders with selected screen status.");
+                }
                 return true;
             }
         }
@@ -261,7 +272,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             $order->addStatusHistoryComment("Order skipped: customer group '$customerGroupId' is in the skip list.");
             $order->setNofraudStatus('skip');
             $order->save();
-            $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
+            if ($this->isDebugLoggingAllowed()) {
+                $this->logger->info("Skipping Order {$orderId}: customer group '{$customerGroupId}' is in the skip list.");
+            }
             return true;
         }
         return false;
