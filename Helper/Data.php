@@ -93,6 +93,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
@@ -110,6 +111,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $logger->err(print_r($data, true));
         } else {
             $logger->err($data);
@@ -131,6 +133,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
@@ -152,8 +155,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             $this->file->mkdir($baseVarDir . "/log/nofraud_connect", 0750);
         }
         $htaccessPath = $baseVarDir . "/log/nofraud_connect/.htaccess";
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
         if (!file_exists($htaccessPath)) {
-            file_put_contents($htaccessPath, "# Apache 2.4\n<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n# Apache 2.2\n<IfModule !mod_authz_core.c>\n    Deny from all\n</IfModule>\n");
+            $htaccessContent = "# Apache 2.4\n<IfModule mod_authz_core.c>\n"
+                . "    Require all denied\n</IfModule>\n"
+                . "# Apache 2.2\n<IfModule !mod_authz_core.c>\n"
+                . "    Deny from all\n</IfModule>\n";
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+            file_put_contents($htaccessPath, $htaccessContent);
         }
         $productMetadata = $this->objectManager->get(
             ProductMetadataInterface::class

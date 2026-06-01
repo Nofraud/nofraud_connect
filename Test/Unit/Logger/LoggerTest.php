@@ -8,7 +8,9 @@ use PHPUnit\Framework\TestCase;
 
 class LoggerTest extends TestCase
 {
+    /** @var Logger */
     private $logger;
+    /** @var TestHandler */
     private $testHandler;
 
     protected function setUp(): void

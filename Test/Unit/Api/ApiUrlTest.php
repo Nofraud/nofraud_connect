@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class ApiUrlTest extends TestCase
 {
+    /** @var ApiUrl */
     private $apiUrl;
 
     protected function setUp(): void

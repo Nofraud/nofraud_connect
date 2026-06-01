@@ -9,8 +9,11 @@ use PHPUnit\Framework\TestCase;
 
 class AbstractHandlerTest extends TestCase
 {
+    /** @var Curl */
     private $curl;
+    /** @var Logger */
     private $logger;
+    /** @var AbstractHandler */
     private $handler;
 
     protected function setUp(): void

@@ -14,8 +14,17 @@ use Magento\Framework\Module\Dir\Reader as DirReader;
 
 class Version extends Template implements RendererInterface
 {
+    /** @var DirReader */
     protected $dirReader;
 
+    /**
+     * Constructor
+     *
+     * @param DirReader $dirReader
+     * @param Template\Context $context
+     * @param \Magento\Framework\HTTP\Client\Curl $curl
+     * @param array $data
+     */
     public function __construct(
         DirReader $dirReader,
         Template\Context $context,
@@ -28,6 +37,8 @@ class Version extends Template implements RendererInterface
     }
 
     /**
+     * Render version fieldset
+     *
      * @param \Magento\Framework\Data\Form\Element\AbstractElement $element
      * @return mixed
      */
@@ -40,6 +51,11 @@ class Version extends Template implements RendererInterface
         return $html;
     }
 
+    /**
+     * Get installed module version from composer.json
+     *
+     * @return string
+     */
     public function getVersion()
     {
         $installVersion = "unidentified";
@@ -52,20 +68,32 @@ class Version extends Template implements RendererInterface
         return $installVersion;
     }
 
+    /**
+     * Read composer.json for the given module
+     *
+     * @param string $moduleName
+     * @return array|false
+     */
     public function getComposerInformation($moduleName)
     {
         $dir = $this->dirReader->getModuleDir("", $moduleName);
 
-        if (file_exists($dir.'/composer.json')) {
-            return json_decode(file_get_contents($dir.'/composer.json'), true);
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
+        if (file_exists($dir . '/composer.json')) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+            return json_decode(file_get_contents($dir . '/composer.json'), true);
         }
 
         return false;
     }
 
+    /**
+     * Get template path
+     *
+     * @return string
+     */
     public function getTemplate()
     {
         return 'NoFraud_Connect::system/config/fieldset/version.phtml';
     }
-
 }

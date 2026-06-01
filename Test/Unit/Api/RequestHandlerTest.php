@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 
 class RequestHandlerTest extends TestCase
 {
+    /** @var RequestHandler */
     private $handler;
 
     protected function setUp(): void

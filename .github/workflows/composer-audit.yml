@@ -29,12 +29,9 @@ jobs:
       - name: Validate composer.json
         run: composer validate
 
-      # This module has no composer.lock (correct for a library — the merchant's
-      # Magento project resolves and locks dependencies). Without a lock file,
-      # `composer audit` only checks direct dependency advisories. For full
-      # transitive auditing, merchants must run `composer audit` at their
-      # Magento project root.
-      - name: Check for security advisories
+      # This module is a library with no composer.lock and no installed vendors.
+      # `composer audit` cannot run without either. The real audit happens at
+      # the merchant's Magento project root where dependencies are resolved.
+      - name: Audit notice
         run: |
-          echo "::notice::This module is a library with no composer.lock. Only direct dependency advisories are checked. Merchants must run composer audit at their Magento project root for full transitive coverage."
-          composer audit --format=plain
+          echo "::notice::This is a Magento library module with no composer.lock or vendor directory. Dependency vulnerability scanning must be performed at the merchant's Magento project root via 'composer audit'. This workflow validates composer.json structure only."

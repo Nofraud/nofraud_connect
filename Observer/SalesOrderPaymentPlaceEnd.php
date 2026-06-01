@@ -194,10 +194,17 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
                 } else {
                     $nofraudErrorDecision = $resultMap['http']['response']['body']['Errors'] ?? "";
                     if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
-                        $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                        $newStatus = $this->orderProcessor->getCustomOrderStatus(
+                            $resultMap['http']['response'],
+                            $storeId
+                        );
                         if (!empty($newStatus)) {
                             $order->setNofraudStatus($data['status']);
-                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult(
+                                $newStatus,
+                                $order,
+                                $resultMap
+                            );
                         }
                     }
                 }

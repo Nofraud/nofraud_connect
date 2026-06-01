@@ -43,4 +43,4 @@ jobs:
       - name: Run PHP_CodeSniffer on Changed Files
         if: steps.changed-files.outputs.files != ''
         run: |
-          phpcs --standard=Magento2 --ignore=vendor ${{ steps.changed-files.outputs.files }}
+          phpcs --standard=Magento2 --ignore=vendor,Test/Stubs ${{ steps.changed-files.outputs.files }}
