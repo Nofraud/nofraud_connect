@@ -138,7 +138,8 @@ class OrderFraudStatus
     public function updateOrdersFromNoFraudApiResult($orders, $storeId)
     {
         // Construct the base API URL for fetching order status
-        $apiUrl = $this->apiUrl->buildOrderApiUrl(self::ORDER_REQUEST, $this->configHelper->getApiToken($storeId));
+        $apiUrl = $this->apiUrl->buildOrderApiUrl(self::ORDER_REQUEST);
+        $apiToken = $this->configHelper->getApiToken($storeId);
 
         // Process each eligible order from the db.
         foreach ($orders as $order) {
@@ -150,8 +151,14 @@ class OrderFraudStatus
                 // Create the specific URL for fetching status of current order.
                 $orderSpecificApiUrl = $apiUrl . '/' . $order['increment_id'];
                 // Fetch the status from the API for the current order.
-                $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE);
-                $this->dataHelper->addDataToLog($response);
+                $response = $this->requestHandler->send(null, $orderSpecificApiUrl, self::REQUEST_TYPE, $apiToken);
+                $this->dataHelper->addDataToLog(sprintf(
+                    "Order#%s API response — decision: %s, transaction_id: %s, response_code: %s",
+                    $order['increment_id'],
+                    $response['http']['response']['body']['decision'] ?? 'unknown',
+                    $response['http']['response']['body']['id'] ?? 'N/A',
+                    $response['http']['response']['code'] ?? 'N/A'
+                ));
 
                 // Check if the response contains the necessary data, skip order if it does not
                 if (!isset($response['http']['response']['body'])) {

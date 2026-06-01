@@ -2,8 +2,6 @@
 
 namespace NoFraud\Connect\Api\Portal;
 
-use org\bovigo\vfs\DirectoryIterationTestCase;
-
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
     private const TRANSACTION_STATUS_ENDPOINT = 'status_by_invoice';
@@ -35,13 +33,11 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      *
      * @param mixed $apiUrl
      * @param mixed $orderId
-     * @param mixed $apiToken
-     * @return void
+     * @return string
      */
-    protected function getTransactionStatusUrl($apiUrl, $orderId, $apiToken)
+    protected function getTransactionStatusUrl($apiUrl, $orderId)
     {
-        $transactionStatusUrl = $apiUrl . self::TRANSACTION_STATUS_ENDPOINT . DIRECTORY_SEPARATOR . $apiToken;
-        return $transactionStatusUrl . $orderId;
+        return $apiUrl . self::TRANSACTION_STATUS_ENDPOINT . '/' . $orderId;
     }
 
     /**
@@ -55,7 +51,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     protected function getTransactionIdFromNoFraud($apiUrl, $orderId, $apiToken)
     {
         $params = [];
-        $response = $this->send($params, $this->getTransactionStatusUrl($apiUrl, $orderId, $apiToken), 'GET');
+        $response = $this->send($params, $this->getTransactionStatusUrl($apiUrl, $orderId), 'GET', $apiToken);
 
         if (isset($response['http']['response']['body']['id'])) {
             return $response['http']['response']['body']['id'];

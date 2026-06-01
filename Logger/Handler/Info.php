@@ -13,4 +13,9 @@ class Info extends \Magento\Framework\Logger\Handler\Base
      * @var string
      */
     protected $fileName = '/var/log/nofraud_connect/info.log';
+
+    /**
+     * @var int
+     */
+    protected $filePermission = 0640;
 }

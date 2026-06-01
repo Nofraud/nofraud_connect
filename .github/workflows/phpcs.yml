@@ -7,18 +7,21 @@ on:
       - "phpcs.xml"
       - ".github/workflows/phpcs.yml"
 
+permissions:
+  contents: read
+
 jobs:
   phpcs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0 # important!
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # v2
         with:
-          php-version: "8.1" # Adjust to your Magento project's PHP version
+          php-version: "8.1"
           tools: composer
 
       - name: Allow Composer Plugins
@@ -34,10 +37,10 @@ jobs:
       - name: Get Changed PHP Files
         id: changed-files
         run: |
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- '*.php')
-          echo "::set-output name=files::$CHANGED_FILES"
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} -- '*.php' | tr '\n' ' ')
+          echo "files=$CHANGED_FILES" >> "$GITHUB_OUTPUT"
 
       - name: Run PHP_CodeSniffer on Changed Files
         if: steps.changed-files.outputs.files != ''
         run: |
-          phpcs --standard=Magento2 --ignore=vendor ${{ steps.changed-files.outputs.files }}
+          phpcs --standard=Magento2 --ignore=vendor,Test/Stubs ${{ steps.changed-files.outputs.files }}

@@ -2,7 +2,6 @@
 
 namespace NoFraud\Connect\Helper;
 
-use Magento\Framework\App\ObjectManager;
 use Magento\Framework\ObjectManagerInterface;
 use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\Filesystem\Io\File;
@@ -13,9 +12,6 @@ use Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory;
 
 class Data extends \Magento\Framework\App\Helper\AbstractHelper
 {
-
-    private const XML_PATH_ORDER_DEBUG_ENABLED = "nofraud_connect/order_debug/debug";
-
     /**
      * @var \Magento\Framework\Filesystem\Directory\Write
      */
@@ -49,6 +45,11 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     protected $statusCollectionFactory;
 
     /**
+     * @var Config
+     */
+    private $configHelper;
+
+    /**
      * Constructor
      *
      * @param \Magento\Framework\App\Helper\Context $context
@@ -56,7 +57,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      * @param ObjectManagerInterface $objectManager
      * @param File $file
      * @param Filesystem $filesystem
-     * @param LabelFactory $statusCollectionFactory
+     * @param CollectionFactory $statusCollectionFactory
+     * @param Config $configHelper
      */
     public function __construct(
         \Magento\Framework\App\Helper\Context $context,
@@ -64,7 +66,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         ObjectManagerInterface $objectManager,
         File $file,
         Filesystem $filesystem,
-        CollectionFactory $statusCollectionFactory
+        CollectionFactory $statusCollectionFactory,
+        Config $configHelper
     ) {
         $this->directoryList = $directoryList;
         $this->objectManager = $objectManager;
@@ -73,19 +76,8 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
             DirectoryList::VAR_DIR
         );
         $this->statusCollectionFactory = $statusCollectionFactory;
+        $this->configHelper = $configHelper;
         parent::__construct($context);
-    }
-    /**
-     * Get Debug Mode is Enabled?
-     *
-     * @return boolean
-     */
-    public function getDebugModeIsEnabled()
-    {
-        return $this->scopeConfig->getValue(
-            self::XML_PATH_ORDER_DEBUG_ENABLED,
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
     }
     /**
      * Log Data if enabled
@@ -94,13 +86,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addDataToLog($data)
     {
-        if (!$this->getDebugModeIsEnabled()) {
+        if (!$this->configHelper->isDebugLoggingAllowed()) {
             return;
         }
 
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
@@ -118,26 +111,10 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $logger->err(print_r($data, true));
         } else {
             $logger->err($data);
-        }
-    }
-
-    /**
-     * Log Info
-     *
-     * @param mixed $data
-     * @return void
-     */
-    public function addInfoToLog($data)
-    {
-        $logger = $this->getLogger();
-
-        if ($data && is_array($data)) {
-            $logger->info(print_r($data, true));
-        } else {
-            $logger->info($data);
         }
     }
 
@@ -149,13 +126,14 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
      */
     public function addDebugToLog($data)
     {
-        if (!$this->getDebugModeIsEnabled()) {
+        if (!$this->configHelper->isDebugLoggingAllowed()) {
             return;
         }
 
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
@@ -171,31 +149,32 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
     {
         $baseVarDir = $this->directoryList->getPath("var");
         if (!$this->_directory->isDirectory("log")) {
-            $this->file->mkdir($baseVarDir . "/log", 0777);
+            $this->file->mkdir($baseVarDir . "/log", 0750);
         }
         if (!$this->_directory->isDirectory("log/nofraud_connect")) {
-            $this->file->mkdir($baseVarDir . "/log/nofraud_connect", 0777);
+            $this->file->mkdir($baseVarDir . "/log/nofraud_connect", 0750);
+        }
+        $htaccessPath = $baseVarDir . "/log/nofraud_connect/.htaccess";
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction
+        if (!file_exists($htaccessPath)) {
+            $htaccessContent = "# Apache 2.4\n<IfModule mod_authz_core.c>\n"
+                . "    Require all denied\n</IfModule>\n"
+                . "# Apache 2.2\n<IfModule !mod_authz_core.c>\n"
+                . "    Deny from all\n</IfModule>\n";
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction
+            file_put_contents($htaccessPath, $htaccessContent);
         }
         $productMetadata = $this->objectManager->get(
             ProductMetadataInterface::class
         );
+        $logFile = $baseVarDir . "/log/nofraud_connect/log-" . date("d-m-Y") . ".log";
         $version = $productMetadata->getVersion();
         if (version_compare($version, "2.4.3", "<")) {
-            $writer = new \Laminas\Log\Writer\Stream(
-                $baseVarDir .
-                "/log/nofraud_connect/log-" .
-                date("d-m-Y") .
-                ".log"
-            );
+            $writer = new \Laminas\Log\Writer\Stream($logFile, null, 0640);
             $logger = new \Laminas\Log\Logger();
             $logger->addWriter($writer);
         } else {
-            $writer = new \Zend_Log_Writer_Stream(
-                $baseVarDir .
-                "/log/nofraud_connect/log-" .
-                date("d-m-Y") .
-                ".log"
-            );
+            $writer = new \Zend_Log_Writer_Stream($logFile, null, 0640);
             $logger = new \Zend_Log();
             $logger->addWriter($writer);
         }

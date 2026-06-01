@@ -160,15 +160,15 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
         // Build the NoFraud API request JSON from the payment and order objects
         $request = $this->requestHandler->build(
             $payment,
-            $order,
-            $apiToken
+            $order
         );
 
         try {
             // Send the request to the NoFraud API and get response
-            $resultMap = $this->requestHandler->send($request, $apiUrl);
-            // Log request results with associated invoice number
-            $this->logger->logTransactionResults($order, $payment, $resultMap);
+            $resultMap = $this->requestHandler->send($request, $apiUrl, 'POST', $apiToken);
+            if ($this->configHelper->isDebugLoggingAllowed($storeId)) {
+                $this->logger->logTransactionResults($order, $payment, $resultMap);
+            }
 
             // Prepare order data from result map
             $data = $this->responseHandler->getTransactionData($resultMap);
@@ -194,10 +194,17 @@ class SalesOrderPaymentPlaceEnd implements \Magento\Framework\Event\ObserverInte
                 } else {
                     $nofraudErrorDecision = $resultMap['http']['response']['body']['Errors'] ?? "";
                     if (isset($nofraudErrorDecision) && !empty($nofraudErrorDecision)) {
-                        $newStatus = $this->orderProcessor->getCustomOrderStatus($resultMap['http']['response'], $storeId);
+                        $newStatus = $this->orderProcessor->getCustomOrderStatus(
+                            $resultMap['http']['response'],
+                            $storeId
+                        );
                         if (!empty($newStatus)) {
                             $order->setNofraudStatus($data['status']);
-                            $this->orderProcessor->updateOrderStatusFromNoFraudResult($newStatus, $order, $resultMap);
+                            $this->orderProcessor->updateOrderStatusFromNoFraudResult(
+                                $newStatus,
+                                $order,
+                                $resultMap
+                            );
                         }
                     }
                 }

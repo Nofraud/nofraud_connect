@@ -19,6 +19,9 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const GENERAL_REFUND_ONLINE = self::GENERAL . '/refund_online';
     private const GENERAL_AUTH_CAPTURE = self::GENERAL . '/auth_capture';
     private const SKIP_CONFIG_SKIP_CUSTOMER_GROUPS = self::SKIP_CONFIG . '/skip_customer_group';
+    private const ORDER_DEBUG = 'nofraud_connect/order_debug';
+    private const ORDER_DEBUG_ENABLED = self::ORDER_DEBUG . '/debug';
+    private const ORDER_DEBUG_LIST_MODE = self::ORDER_DEBUG . '/list_mode';
 
     private const PRODUCTION_URL = "https://api.nofraud.com/";
 
@@ -27,7 +30,6 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
     private const SANDBOX_TEST1_URL = "https://api-qe1.nofraud-test.com/";
 
     private const SANDBOX_TEST2_URL = "https://api-qe2.nofraud-test.com/";
-
 
     /**
      * @var $logger
@@ -108,13 +110,29 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
     /**
      * Get Nofruad Connect Mode
+     *
+     * @param int|null $storeId
+     * @return mixed
      */
-    public function getNofraudAdvanceListMode()
+    public function getNofraudAdvanceListMode($storeId = null)
     {
-        return $this->scopeConfig->getValue(
-            'nofraud_connect/order_debug/list_mode',
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-        );
+        return $this->_getConfigValueByStoreId(self::ORDER_DEBUG_LIST_MODE, $storeId);
+    }
+
+    /**
+     * Check if debug logging is allowed for the given store
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isDebugLoggingAllowed($storeId = null)
+    {
+        $debugEnabled = (bool) $this->_getConfigValueByStoreId(self::ORDER_DEBUG_ENABLED, $storeId);
+        if (!$debugEnabled) {
+            return false;
+        }
+        $checkoutMode = $this->getNofraudAdvanceListMode($storeId);
+        return $checkoutMode !== 'prod';
     }
 
     /**
@@ -239,15 +257,26 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
 
             $orderStatus = $order->getStatus();
             if (!in_array($orderStatus, $screenedOrderStatus)) {
-                $orderId = $order->getIncrementId();
-                $this->logger->info("\n Ignoring Order $orderId: status is '$orderStatus;'
-                only screening orders with selected screen status.");
+                if ($this->isDebugLoggingAllowed()) {
+                    $orderId = $order->getIncrementId();
+                    $this->logger->info(
+                        "Ignoring Order {$orderId}: status is '{$orderStatus}';"
+                        . " only screening orders with selected screen status."
+                    );
+                }
                 return true;
             }
         }
         return false;
     }
 
+    /**
+     * Check if order should be skipped based on customer group
+     *
+     * @param mixed $order
+     * @param int|null $storeId
+     * @return bool
+     */
     public function shouldSkipCustomerGroup($order, $storeId = null)
     {
         $skipCustomerGroups = $this->_getSkipCustomerGroups($storeId);
@@ -261,17 +290,33 @@ class Config extends \Magento\Framework\App\Helper\AbstractHelper
             $order->addStatusHistoryComment("Order skipped: customer group '$customerGroupId' is in the skip list.");
             $order->setNofraudStatus('skip');
             $order->save();
-            $this->logger->info("Skipping Order $orderId: customer group '$customerGroupId' is in the skip list.");
+            if ($this->isDebugLoggingAllowed()) {
+                $this->logger->info(
+                    "Skipping Order {$orderId}: customer group '{$customerGroupId}' is in the skip list."
+                );
+            }
             return true;
         }
         return false;
     }
 
+    /**
+     * Check if auth capture is enabled
+     *
+     * @param int|null $storeId
+     * @return mixed
+     */
     public function authCaptureEnabled($storeId = null)
     {
         return $this->_getConfigValueByStoreId(self::GENERAL_AUTH_CAPTURE, $storeId);
     }
 
+    /**
+     * Get customer groups to skip
+     *
+     * @param int|null $storeId
+     * @return array
+     */
     private function _getSkipCustomerGroups($storeId = null): array
     {
         $skipCustomerGroups = $this->_getConfigValueByStoreId(self::SKIP_CONFIG_SKIP_CUSTOMER_GROUPS, $storeId);

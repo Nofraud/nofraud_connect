@@ -33,21 +33,23 @@ class AbstractHandler
      * @param array $params |NoFraud request object parameters
      * @param string $apiUrl | The URL to send to
      * @param string $requestType | Request Type
+     * @param string|null $apiToken | API token sent via nf-token header
      */
-    public function send($params, $apiUrl, $requestType = 'POST')
+    public function send($params, $apiUrl, $requestType = 'POST', $apiToken = null)
     {
-        if (!strcasecmp($requestType, 'post')) {
-            $headers = ['Content-Type' => 'application/json', 'Content-Length' => strlen(json_encode($params))];
-            $this->_curl->setHeaders($headers);
-        } else {
-            $headers = ['Content-Type' => 'application/json'];
-            $this->_curl->setHeaders($headers);
+        $headers = ['Content-Type' => 'application/json'];
+        if ($apiToken !== null) {
+            $headers['nf-token'] = $apiToken;
         }
+        if (!strcasecmp($requestType, 'post')) {
+            $headers['Content-Length'] = strlen(json_encode($params));
+        }
+        $this->_curl->setHeaders($headers);
         $this->_curl->setOption(CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
         $this->_curl->setOption(CURLOPT_RETURNTRANSFER, 1);
         $errorMessage = "";
         try {
-            $this->_curl->addHeader('Expect:',":");
+            $this->_curl->addHeader('Expect:', ":");
             if (!strcasecmp($requestType, 'post')) {
                 $this->_curl->post($apiUrl, json_encode($params));
             } else {

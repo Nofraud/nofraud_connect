@@ -99,8 +99,9 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
         // Send the request to the NoFraud API and get response
         $resultMap = $this->requestHandler->send($request, $portalApiUrl);
 
-        // Log request results with associated invoice number
-        $this->logger->logCancelTransactionResults($order, $resultMap);
+        if ($this->configHelper->isDebugLoggingAllowed($storeId)) {
+            $this->logger->logCancelTransactionResults($order, $resultMap);
+        }
 
         try {
             // For all API responses (official results from NoFraud, client errors, etc.),

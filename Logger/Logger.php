@@ -15,14 +15,12 @@ class Logger extends \Monolog\Logger
      */
     public function logTransactionResults($order, $payment, $resultMap)
     {
-        $orderLog['id'] = $order->getIncrementId();
-
-        $paymentLog['method'] = $payment->getMethod();
-
         $info = [
-            'order' => $orderLog,
-            'payment' => $paymentLog,
-            'api_result' => $resultMap,
+            'order_id' => $order->getIncrementId(),
+            'payment_method' => $payment->getMethod(),
+            'decision' => $resultMap['http']['response']['body']['decision'] ?? 'unknown',
+            'transaction_id' => $resultMap['http']['response']['body']['id'] ?? null,
+            'response_code' => $resultMap['http']['response']['code'] ?? null,
         ];
 
         $this->info(json_encode($info));
@@ -36,11 +34,10 @@ class Logger extends \Monolog\Logger
      */
     public function logCancelTransactionResults($order, $resultMap)
     {
-        $orderLog['id'] = $order->getIncrementId();
-
         $info = [
-            'order' => $orderLog,
-            'api_result' => $resultMap,
+            'order_id' => $order->getIncrementId(),
+            'transaction_id' => $resultMap['http']['response']['body']['id'] ?? null,
+            'response_code' => $resultMap['http']['response']['code'] ?? null,
         ];
 
         $this->info(json_encode($info));
@@ -55,26 +52,19 @@ class Logger extends \Monolog\Logger
     public function logFailure($order, $exception)
     {
         $orderId = $order->getIncrementId();
-        $this->critical("Encountered an exception while processing Order {$orderId}: \n" . (string) $exception);
+        $this->critical("Encountered an exception while processing Order {$orderId}: " . $exception->getMessage());
     }
 
     /**
      * Log Api Error
      *
-     * @param mixed $apiUrl
-     * @param mixed $curlError
-     * @param mixed $responseCode
-     * @param mixed $params
+     * @param string $apiUrl
+     * @param string $curlError
+     * @param int|string $responseCode
      */
-    public function logApiError($apiUrl, $curlError, $responseCode, $params = null)
+    public function logApiError($apiUrl, $curlError, $responseCode)
     {
-        $this->critical("Encountered an exception while sending an API request. Here is the API url: {$apiUrl}");
-        $this->critical("Encountered an exception while sending an API request. Here are the parameters: ");
-        $this->critical($params);
-        $this->critical("Encountered an exception while sending an API request. Here is the response code: ");
-        $this->critical($responseCode);
-        $this->critical("Encountered an exception while sending an API request. Here is the exception: ");
-        $this->critical($curlError);
+        $this->critical("API request exception — URL: {$apiUrl}, response code: {$responseCode}, error: {$curlError}");
     }
 
     /**
