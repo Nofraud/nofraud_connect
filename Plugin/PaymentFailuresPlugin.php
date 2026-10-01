@@ -8,63 +8,63 @@ use NoFraud\Connect\Model\PaymentAttempts;
 
 class PaymentFailuresPlugin
 {
-  /**
-   * @var CartRepositoryInterface
-   */
-  private $cartRepository;
+    /**
+     * @var CartRepositoryInterface
+     */
+    private $cartRepository;
 
+    /**
+     * @var \NoFraud\Connect\Logger\Logger
+     */
+    private $logger;
 
-  private $logger;
+    /**
+     * @var PaymentAttempts
+     */
+    private $paymentAttempts;
 
-  /**
-   * @var PaymentAttempts
-   */
-  private $paymentAttempts;
-
-  /**
-   * Constructor
-   *
-   * @param CartRepositoryInterface $cartRepository
-   * @param PaymentAttempts $paymentAttempts
-   */
-  public function __construct(
-    CartRepositoryInterface $cartRepository,
-    \NoFraud\Connect\Logger\Logger $logger,
-    PaymentAttempts $paymentAttempts
-  ) {
-    $this->cartRepository = $cartRepository;
-    $this->logger = $logger;
-    $this->paymentAttempts = $paymentAttempts;
-  }
-
-  /**
-   * Execute logic before the handle method.
-   *
-   * @param PaymentFailuresService $subject
-   * @param int $cartId
-   * @param string $message
-   * @param string $checkoutType
-   * @return array|null
-   */
-  public function beforeHandle(PaymentFailuresService $subject, int $cartId, string $message, string $checkoutType = 'onepage'): ?array
-  {
-    try {
-      $quote = $this->cartRepository->get($cartId);
-      if ($this->paymentAttempts->recordFailure($quote)) {
-        $quote->save();
-      }
-    } catch (\Exception $e) {
-      $this->logger->error($e->getMessage());
+    /**
+     * Constructor
+     *
+     * @param CartRepositoryInterface $cartRepository
+     * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param PaymentAttempts $paymentAttempts
+     */
+    public function __construct(
+        CartRepositoryInterface $cartRepository,
+        \NoFraud\Connect\Logger\Logger $logger,
+        PaymentAttempts $paymentAttempts
+    ) {
+        $this->cartRepository = $cartRepository;
+        $this->logger = $logger;
+        $this->paymentAttempts = $paymentAttempts;
     }
 
-    // Custom logic to execute before the handle method
-    // Example: Log or modify the incoming parameters
-    // $cartId, $message, and $checkoutType can be modified here
+    /**
+     * Record a failed payment attempt on the quote before the failure is handled.
+     *
+     * @param PaymentFailuresService $subject
+     * @param int $cartId
+     * @param string $message
+     * @param string $checkoutType
+     * @return array|null
+     */
+    public function beforeHandle(
+        PaymentFailuresService $subject,
+        int $cartId,
+        string $message,
+        string $checkoutType = 'onepage'
+    ): ?array {
+        try {
+            $quote = $this->cartRepository->get($cartId);
+            if ($this->paymentAttempts->recordFailure($quote)) {
+                $quote->save();
+            }
+        } catch (\Exception $e) {
+            $this->logger->error($e->getMessage());
+        }
 
-    // Example log
-    // $this->logger->info("Before Handle called with cartId: {$cartId}, message: {$message}, checkoutType: {$checkoutType}");
-
-    // Return parameters as an array
-    return null;
-  }
+        // Arguments are passed through unchanged
+        return null;
+    }
 }
