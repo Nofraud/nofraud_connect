@@ -4,6 +4,7 @@ namespace NoFraud\Connect\Plugin;
 
 use Magento\Sales\Model\Service\PaymentFailuresService;
 use Magento\Quote\Api\CartRepositoryInterface;
+use NoFraud\Connect\Model\PaymentAttempts;
 
 class PaymentFailuresPlugin
 {
@@ -16,16 +17,24 @@ class PaymentFailuresPlugin
   private $logger;
 
   /**
+   * @var PaymentAttempts
+   */
+  private $paymentAttempts;
+
+  /**
    * Constructor
    *
    * @param CartRepositoryInterface $cartRepository
+   * @param PaymentAttempts $paymentAttempts
    */
   public function __construct(
     CartRepositoryInterface $cartRepository,
     \NoFraud\Connect\Logger\Logger $logger,
+    PaymentAttempts $paymentAttempts
   ) {
     $this->cartRepository = $cartRepository;
     $this->logger = $logger;
+    $this->paymentAttempts = $paymentAttempts;
   }
 
   /**
@@ -35,13 +44,15 @@ class PaymentFailuresPlugin
    * @param int $cartId
    * @param string $message
    * @param string $checkoutType
-   * @return array
+   * @return array|null
    */
-  public function beforeHandle(PaymentFailuresService $subject, int $cartId, string $message, string $checkoutType = 'onepage'): null
+  public function beforeHandle(PaymentFailuresService $subject, int $cartId, string $message, string $checkoutType = 'onepage'): ?array
   {
     try {
       $quote = $this->cartRepository->get($cartId);
-      $quote->setNofraudFailedPaymentAttempts($quote->getNofraudFailedPaymentAttempts() + 1)->save();
+      if ($this->paymentAttempts->recordFailure($quote)) {
+        $quote->save();
+      }
     } catch (\Exception $e) {
       $this->logger->error($e->getMessage());
     }

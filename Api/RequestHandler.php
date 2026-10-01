@@ -5,6 +5,7 @@ namespace NoFraud\Connect\Api;
 use Magento\Framework\Simplexml\Element;
 use NoFraud\Connect\Logger\Logger;
 use \Magento\Quote\Model\QuoteFactory;
+use NoFraud\Connect\Model\PaymentAttempts;
 
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
@@ -17,6 +18,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     private const CYBERSOURCE_METHOD_CODE = 'chcybersource';
     private $versionHelper;
     private $quoteFactory;
+    private $paymentAttempts;
 
     /**
      * @var Currency
@@ -74,8 +76,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         \NoFraud\Connect\Helper\Version $versionHelper,
-        QuoteFactory $quoteFactory
-
+        QuoteFactory $quoteFactory,
+        PaymentAttempts $paymentAttempts
     ) {
 
         parent::__construct($logger, $curl);
@@ -87,6 +89,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $this->_localeResolver = $localeResolver;
         $this->versionHelper = $versionHelper;
         $this->quoteFactory = $quoteFactory;
+        $this->paymentAttempts = $paymentAttempts;
     }
 
     /**
@@ -168,14 +171,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
             $quote = $this->quoteFactory->create()->load($quoteId);
 
-            $cardAttempts = $quote->getNofraudFailedPaymentAttempts();
-
-            if (!is_numeric($cardAttempts) || $cardAttempts < 0) {
-                $this->logger->error("Invalid payment attempt count ({$cardAttempts}) for quote ID {$quoteId}.");
-                return null;
-            }
-
-            return (int)$cardAttempts + 1;
+            return $this->paymentAttempts->getRecentFailures($quote) + 1;
         } catch (\Exception $e) {
             $this->logger->error("Failed to get payment attempts: " . $e->getMessage());
         }
