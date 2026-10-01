@@ -5,6 +5,7 @@ namespace NoFraud\Connect\Api;
 use Magento\Framework\Simplexml\Element;
 use NoFraud\Connect\Logger\Logger;
 use \Magento\Quote\Model\QuoteFactory;
+use NoFraud\Connect\Model\PaymentAttempts;
 
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
@@ -15,8 +16,21 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     private const PARADOXLABS_CIM_METHOD_CODE = 'authnetcim';
     private const PL_MI_METHOD_CODE = 'nmi_directpost';
     private const CYBERSOURCE_METHOD_CODE = 'chcybersource';
+
+    /**
+     * @var \NoFraud\Connect\Helper\Version
+     */
     private $versionHelper;
+
+    /**
+     * @var QuoteFactory
+     */
     private $quoteFactory;
+
+    /**
+     * @var PaymentAttempts
+     */
+    private $paymentAttempts;
 
     /**
      * @var Currency
@@ -53,6 +67,9 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      */
     private const JAPAN_LOCALE_CODE = 'ja_JP';
 
+    /**
+     * @var \Magento\Framework\Locale\ResolverInterface
+     */
     protected $_localeResolver;
 
     /**
@@ -64,6 +81,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      * @param \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository
      * @param \Magento\Customer\Model\Customer $customer
      * @param \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory
+     * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
+     * @param \NoFraud\Connect\Helper\Version $versionHelper
+     * @param QuoteFactory $quoteFactory
+     * @param PaymentAttempts $paymentAttempts
      */
     public function __construct(
         \NoFraud\Connect\Logger\Logger $logger,
@@ -74,8 +95,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         \NoFraud\Connect\Helper\Version $versionHelper,
-        QuoteFactory $quoteFactory
-
+        QuoteFactory $quoteFactory,
+        PaymentAttempts $paymentAttempts
     ) {
 
         parent::__construct($logger, $curl);
@@ -87,6 +108,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $this->_localeResolver = $localeResolver;
         $this->versionHelper = $versionHelper;
         $this->quoteFactory = $quoteFactory;
+        $this->paymentAttempts = $paymentAttempts;
     }
 
     /**
@@ -156,6 +178,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         return $baseParams;
     }
 
+    /**
+     * Get the cardAttempts value: recent failed payment attempts plus this one
+     *
+     * @param \Magento\Sales\Model\Order $order
+     * @return int|null
+     */
     private function getPaymentAttempts($order): int|null
     {
         try {
@@ -168,14 +196,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
             $quote = $this->quoteFactory->create()->load($quoteId);
 
-            $cardAttempts = $quote->getNofraudFailedPaymentAttempts();
-
-            if (!is_numeric($cardAttempts) || $cardAttempts < 0) {
-                $this->logger->error("Invalid payment attempt count ({$cardAttempts}) for quote ID {$quoteId}.");
-                return null;
-            }
-
-            return (int)$cardAttempts + 1;
+            return $this->paymentAttempts->getRecentFailures($quote) + 1;
         } catch (\Exception $e) {
             $this->logger->error("Failed to get payment attempts: " . $e->getMessage());
         }
@@ -282,11 +303,11 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         return $this->orderCollectionFactory->create(
             $customerId
         )->addFieldToSelect(
-                '*'
-            )->setOrder(
-                'created_at',
-                'desc'
-            )->getItems();
+            '*'
+        )->setOrder(
+            'created_at',
+            'desc'
+        )->getItems();
     }
 
     /**
@@ -501,7 +522,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
              * It's hard code for Japan locale.
              */
             $price = number_format(
-                (float) 
+                (float)
                 str_replace(',', $locale === self::JAPAN_LOCALE_CODE ? '' : '.', $value),
                 2,
                 '.',
@@ -630,6 +651,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
     /**
      * Extract the BIN, AVS and CVV codes from Cybersource
+     *
      * @param array $info
      * @return array
      */
@@ -654,4 +676,3 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         return $this->scrubEmptyValues($params);
     }
 }
-

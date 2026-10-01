@@ -32,5 +32,6 @@
         </table>
         <table name="quote" resource="default" engine="innodb" comment="Quote Table">
                 <column name="nofraud_failed_payment_attempts" xsi:type="int" nullable="false" default="0" comment="Failed Payment Attempts"/>
+                <column name="nofraud_failed_payment_times" xsi:type="text" nullable="true" comment="Failed Payment Attempt Timestamps"/>
         </table>
  </schema>
