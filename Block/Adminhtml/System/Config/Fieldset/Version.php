@@ -67,9 +67,4 @@ class Version extends Template implements RendererInterface
     {
         return 'NoFraud_Connect::system/config/fieldset/version.phtml';
     }
-
-    public function getDownloadDebugUrl()
-    {
-        return $this->getBaseUrl().'var/log/nofraud_connect/info.log';
-    }
 }
