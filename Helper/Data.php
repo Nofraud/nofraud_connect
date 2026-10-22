@@ -101,6 +101,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction -- debug log of array data
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
@@ -118,6 +119,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction -- error log of array data
             $logger->err(print_r($data, true));
         } else {
             $logger->err($data);
@@ -135,6 +137,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction -- debug log of array data
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
@@ -156,6 +159,7 @@ class Data extends \Magento\Framework\App\Helper\AbstractHelper
         $logger = $this->getLogger();
 
         if ($data && is_array($data)) {
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction -- debug log of array data
             $logger->info(print_r($data, true));
         } else {
             $logger->info($data);
