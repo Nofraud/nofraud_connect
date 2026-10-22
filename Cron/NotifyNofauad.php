@@ -96,7 +96,7 @@ class NotifyNofauad
 
             $recepientEmails = $this->scopeConfig->getValue(self::XML_PATH_RECIPIENT, ScopeInterface::SCOPE_STORE);
 
-            $recepientEmails = explode(",", $recepientEmails);
+            $recepientEmails = explode(",", (string)$recepientEmails);
             $recepientEmails = array_filter($recepientEmails);
             $recepientEmails = array_map("trim", $recepientEmails);
 

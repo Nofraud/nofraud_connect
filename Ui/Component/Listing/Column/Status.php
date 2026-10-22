@@ -6,7 +6,7 @@ use \Magento\Sales\Api\OrderRepositoryInterface;
 use \Magento\Framework\View\Element\UiComponent\ContextInterface;
 use \Magento\Framework\View\Element\UiComponentFactory;
 use \Magento\Ui\Component\Listing\Columns\Column;
-use function PHPUnit\Framework\isEmpty;
+use \Magento\Framework\Escaper;
 
 class Status extends Column
 {
@@ -16,11 +16,17 @@ class Status extends Column
     protected $_orderRepository;
 
     /**
+     * @var Escaper
+     */
+    protected $escaper;
+
+    /**
      * Constructor
      *
      * @param ContextInterface $context
      * @param UiComponentFactory $uiComponentFactory
      * @param OrderRepositoryInterface $orderRepository
+     * @param Escaper $escaper
      * @param array $components
      * @param array $data
      */
@@ -28,10 +34,12 @@ class Status extends Column
         ContextInterface $context,
         UiComponentFactory $uiComponentFactory,
         OrderRepositoryInterface $orderRepository,
+        Escaper $escaper,
         array $components = [],
         array $data = []
     ) {
         $this->_orderRepository = $orderRepository;
+        $this->escaper = $escaper;
         parent::__construct($context, $uiComponentFactory, $components, $data);
     }
 
@@ -49,11 +57,12 @@ class Status extends Column
                 $order  = $this->_orderRepository->get($item["entity_id"]);
                 $status = $order->getData("nofraud_status");
                 $id = $order->getData("nofraud_transaction_id");
-                $text = $status;
+                $text = $this->escaper->escapeHtml($status);
 
                 if (!empty($id)) {
-                    $transcationUrl = "https://portal.nofraud.com/transaction/";
-                    $text = '<a target="_blank" href="' . $transcationUrl . $id . '">' . $status . '</a>';
+                    $transcationUrl = "https://portal.nofraud.com/transaction/" . rawurlencode((string)$id);
+                    $text = '<a target="_blank" href="' . $this->escaper->escapeUrl($transcationUrl) . '">'
+                        . $text . '</a>';
                 }
 
                 $item[$this->getData('name')] = $text;

@@ -69,21 +69,33 @@ class OrderCancelAfter implements \Magento\Framework\Event\ObserverInterface
      */
     public function execute(\Magento\Framework\Event\Observer $observer)
     {
+        // Get Order From Observer
+        $order = $observer->getEvent()->getOrder();
+
+        // Use the order's store: an admin cancellation runs in the admin store
+        $storeId = $order->getStoreId();
+
         // If module is disabled in admin config, do nothing
-        $storeId = $this->storeManager->getStore()->getId();
         if (!$this->configHelper->getEnabled($storeId)) {
+            return;
+        }
+
+        // Only orders screened by NoFraud have a transaction to cancel
+        if (!$order->getNofraudScreened()) {
+            return;
+        }
+
+        // The portal cancel endpoint only exists in production, so skip orders
+        // screened against a sandbox or test environment (Checkout Mode)
+        $apiUrl = $this->apiUrl->whichEnvironmentUrl($storeId);
+        if ($apiUrl !== $this->apiUrl->getProductionUrl()) {
             return;
         }
 
         // Get NoFraud Api Token
         $apiToken = $this->configHelper->getApiToken($storeId);
 
-        // Use the NoFraud Sandbox URL if Sandbox Mode is enabled in admin config
         $portalApiUrl = $this->portalApiUrl->getPortalOrderCancelUrl();
-        $apiUrl = $this->apiUrl->getProductionUrl();
-
-        // Get Order Id From Observer
-        $order = $observer->getEvent()->getOrder();
 
         // Build the NoFraud API request JSON from the payment and order objects
         $request = $this->requestHandler->build(

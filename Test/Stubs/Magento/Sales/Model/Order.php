@@ -11,4 +11,7 @@ class Order
     public function getXForwardedFor() { return ''; }
     public function getQuoteId() { return null; }
     public function getStoreId() { return null; }
+    public function getNofraudScreened() { return null; }
+    public function addStatusHistoryComment($comment) { return $this; }
+    public function save() { return $this; }
 }

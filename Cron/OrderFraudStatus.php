@@ -113,18 +113,17 @@ class OrderFraudStatus
 
         $orderStatusReview = $this->configHelper->getOrderStatusReview($storeId);
         $screenedOrderStatus = $this->configHelper->getScreenedOrderStatus($storeId);
-        $orderStatusToScreen = "'" . implode("','", $screenedOrderStatus) . "'";
+        $statuses = array_values(array_filter(
+            array_unique(array_merge([$orderStatusReview], (array)$screenedOrderStatus)),
+            fn($status) => (string)$status !== ''
+        ));
 
-        $select = $orders->getSelect()
-            ->where('store_id = ' . $storeId)
+        // Values are bound, not concatenated, so config values cannot alter the query
+        $orders->getSelect()
+            ->where('store_id = ?', (int)$storeId)
             ->where('nofraud_transaction_id IS NOT NULL')
-            ->where(
-                '(status = \'' .
-                $orderStatusReview .
-                '\' OR status in (' .
-                $orderStatusToScreen .
-                ')) AND nofraud_status =\'review\''
-            );
+            ->where('status IN (?)', $statuses)
+            ->where('nofraud_status = ?', 'review');
         return $orders;
     }
 

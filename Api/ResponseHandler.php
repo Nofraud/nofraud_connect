@@ -10,14 +10,22 @@ class ResponseHandler
     protected $logger;
 
     /**
+     * @var \Magento\Framework\Escaper
+     */
+    protected $escaper;
+
+    /**
      * Constructor
      *
      * @param \NoFraud\Connect\Logger\Logger $logger
+     * @param \Magento\Framework\Escaper $escaper
      */
     public function __construct(
-        \NoFraud\Connect\Logger\Logger $logger
+        \NoFraud\Connect\Logger\Logger $logger,
+        \Magento\Framework\Escaper $escaper
     ) {
         $this->logger = $logger;
+        $this->escaper = $escaper;
     }
 
     /**
@@ -59,7 +67,8 @@ class ResponseHandler
         $id       = $responseBody['id'];
         $decision = $responseBody['decision'];
 
-        $comment = "NoFraud decision: " . strtoupper($decision) . ' ( ' . $this->noFraudLink($id, 'view report') . ' )';
+        $comment = "NoFraud decision: " . $this->escaper->escapeHtml(strtoupper((string)$decision))
+            . ' ( ' . $this->noFraudLink($id, 'view report') . ' )';
 
         if ($decision == "review") {
             $comment .= "<br>This transaction is being looked into on your behalf.";
@@ -80,7 +89,7 @@ class ResponseHandler
 
         $comment = "NoFraud was unable to assess this transaction due to the following {$error_s}:";
         foreach ($errors as $error) {
-            $comment .= "<br>\"{$error}\"";
+            $comment .= '<br>"' . $this->escaper->escapeHtml($error) . '"';
         }
 
         return $this->_prepareErrorData($comment);
@@ -95,7 +104,10 @@ class ResponseHandler
      */
     protected function noFraudLink($transactionId, $linkText)
     {
-        return "<a target=\"_blank\" href=\"https://portal.nofraud.com/transaction/{$transactionId}\">{$linkText}</a>";
+        $url = 'https://portal.nofraud.com/transaction/' . rawurlencode((string)$transactionId);
+
+        return '<a target="_blank" href="' . $this->escaper->escapeUrl($url) . '">'
+            . $this->escaper->escapeHtml($linkText) . '</a>';
     }
 
     /**
