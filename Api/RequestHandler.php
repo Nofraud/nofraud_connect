@@ -173,7 +173,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
             $baseParams['cvvResultCode'] = $payment->getCcCidStatus();
         }
 
-        $this->logger->info("Base Params for order {$order->getIncrementId()}: " . json_encode($baseParams));
+        // Never write the API token to the log
+        $logParams = $baseParams;
+        unset($logParams['nf-token']);
+        $this->logger->info("Base Params for order {$order->getIncrementId()}: " . json_encode($logParams));
 
         return $baseParams;
     }

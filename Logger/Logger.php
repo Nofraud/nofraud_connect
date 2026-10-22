@@ -68,13 +68,28 @@ class Logger extends \Monolog\Logger
      */
     public function logApiError($apiUrl, $curlError, $responseCode, $params = null)
     {
+        $apiUrl = $this->maskApiToken($apiUrl);
         $this->critical("Encountered an exception while sending an API request. Here is the API url: {$apiUrl}");
-        $this->critical("Encountered an exception while sending an API request. Here are the parameters: ");
-        $this->critical($params);
+        if ($params !== null) {
+            unset($params['nf-token'], $params['nf_token']);
+            $this->critical("Encountered an exception while sending an API request. Here are the parameters: ");
+            $this->critical((string) json_encode($params));
+        }
         $this->critical("Encountered an exception while sending an API request. Here is the response code: ");
-        $this->critical($responseCode);
+        $this->critical((string) $responseCode);
         $this->critical("Encountered an exception while sending an API request. Here is the exception: ");
-        $this->critical($curlError);
+        $this->critical($this->maskApiToken($curlError));
+    }
+
+    /**
+     * Mask the API token in NoFraud status URLs, e.g. status/{token}/{order}
+     *
+     * @param mixed $text
+     * @return string
+     */
+    public function maskApiToken($text)
+    {
+        return preg_replace('#(/status(?:_by_invoice|_by_url)?/)[^/?\s]+(?=/)#', '$1****', (string) $text);
     }
 
     /**
