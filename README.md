@@ -5,6 +5,7 @@ Integrates NoFraud's post-payment-gateway API functionality into Magento 2.
 ## Sections
 
 * [ Getting Started ](#markdown-header-getting-started)
+    * [ Requirements ](#markdown-header-requirements)
     * [ Installation ](#markdown-header-installation)
     * [ Configuration ](#markdown-header-configuration)
     * [ Troubleshooting ](#markdown-header-troubleshooting)
@@ -31,6 +32,15 @@ Integrates NoFraud's post-payment-gateway API functionality into Magento 2.
     * [ Separation of Concerns ](#markdown-header-separation-of-concerns)
 
 ## Getting Started
+
+### Requirements
+----------------
+
+PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+, or 8.6+. These are the first releases patched for PHP2Shell (CVE-2026-109618, CVE-2026-109619); Composer refuses to install the module on older PHP versions.
+
+Before updating, make sure the PHP version serving your store (check the PHP-FPM or Apache version, not only `php -v`) is at least 8.2.35, 8.3.36, 8.4.27 or 8.5.12. If you build or deploy from a different machine, check the PHP version on your production servers. Updating with an older PHP serving the store will cause HTTP 500 errors on every page.
+
+Distribution builds that backport the fix without changing the version string (for example Ubuntu's PHP 8.3.6) are refused. Once you have confirmed your build includes the fix, install with `composer require nofraud/connect --ignore-platform-req=php`. If your build reports a version below 8.2.35, also run `composer config platform-check false`; otherwise the next `composer dump-autoload` restores Composer's load-time PHP check and takes the store offline.
 
 ### Installation
 ----------------
