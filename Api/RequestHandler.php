@@ -5,6 +5,7 @@ namespace NoFraud\Connect\Api;
 use Magento\Framework\Simplexml\Element;
 use NoFraud\Connect\Logger\Logger;
 use \Magento\Quote\Model\QuoteFactory;
+use NoFraud\Connect\Model\PaymentAttempts;
 
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
@@ -15,8 +16,21 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     private const PARADOXLABS_CIM_METHOD_CODE = 'authnetcim';
     private const PL_MI_METHOD_CODE = 'nmi_directpost';
     private const CYBERSOURCE_METHOD_CODE = 'chcybersource';
+
+    /**
+     * @var \NoFraud\Connect\Helper\Version
+     */
     private $versionHelper;
+
+    /**
+     * @var QuoteFactory
+     */
     private $quoteFactory;
+
+    /**
+     * @var PaymentAttempts
+     */
+    private $paymentAttempts;
 
     /**
      * @var Currency
@@ -49,10 +63,36 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     ];
 
     /**
+     * Card brand by number prefix: single prefixes or [low, high] ranges, checked
+     * in order. Mirrors the API's card_type_from_number so the brand sent is the
+     * same one the API used to derive from the full card number.
+     *
+     * @var array
+     */
+    private const CARD_TYPE_PREFIXES = [
+        'american_express' => [['34'], ['37']],
+        'china_union_pay' => [['62'], ['88']],
+        'discover' => [['6011'], ['622126', '622925'], ['644', '649'], ['65']],
+        'jcb' => [['3528', '3589']],
+        'laser' => [['6304'], ['6706'], ['6771'], ['6709']],
+        'maestro' => [
+            ['5018'], ['5020'], ['5038'], ['5612'], ['5893'], ['6304'],
+            ['6759'], ['6761'], ['6762'], ['6763'], ['0604'],
+        ],
+        'dankort' => [['5019']],
+        'mastercard' => [['50', '55'], ['300', '305'], ['309'], ['36'], ['38', '39']],
+        'visa' => [['4']],
+        'visa_electron' => [['4026'], ['417500'], ['4405'], ['4508'], ['4844'], ['4913'], ['4917']],
+    ];
+
+    /**
      * Japan locale code
      */
     private const JAPAN_LOCALE_CODE = 'ja_JP';
 
+    /**
+     * @var \Magento\Framework\Locale\ResolverInterface
+     */
     protected $_localeResolver;
 
     /**
@@ -64,6 +104,10 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      * @param \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository
      * @param \Magento\Customer\Model\Customer $customer
      * @param \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory
+     * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
+     * @param \NoFraud\Connect\Helper\Version $versionHelper
+     * @param QuoteFactory $quoteFactory
+     * @param PaymentAttempts $paymentAttempts
      */
     public function __construct(
         \NoFraud\Connect\Logger\Logger $logger,
@@ -74,8 +118,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactoryInterface $orderCollectionFactory,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         \NoFraud\Connect\Helper\Version $versionHelper,
-        QuoteFactory $quoteFactory
-
+        QuoteFactory $quoteFactory,
+        PaymentAttempts $paymentAttempts
     ) {
 
         parent::__construct($logger, $curl);
@@ -87,6 +131,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $this->_localeResolver = $localeResolver;
         $this->versionHelper = $versionHelper;
         $this->quoteFactory = $quoteFactory;
+        $this->paymentAttempts = $paymentAttempts;
     }
 
     /**
@@ -151,11 +196,20 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
             $baseParams['cvvResultCode'] = $payment->getCcCidStatus();
         }
 
-        $this->logger->info("Base Params for order {$order->getIncrementId()}: " . json_encode($baseParams));
+        // Never write the API token to the log
+        $logParams = $baseParams;
+        unset($logParams['nf-token']);
+        $this->logger->info("Base Params for order {$order->getIncrementId()}: " . json_encode($logParams));
 
         return $baseParams;
     }
 
+    /**
+     * Get the cardAttempts value: recent failed payment attempts plus this one
+     *
+     * @param \Magento\Sales\Model\Order $order
+     * @return int|null
+     */
     private function getPaymentAttempts($order): int|null
     {
         try {
@@ -168,14 +222,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
             $quote = $this->quoteFactory->create()->load($quoteId);
 
-            $cardAttempts = $quote->getNofraudFailedPaymentAttempts();
-
-            if (!is_numeric($cardAttempts) || $cardAttempts < 0) {
-                $this->logger->error("Invalid payment attempt count ({$cardAttempts}) for quote ID {$quoteId}.");
-                return null;
-            }
-
-            return (int)$cardAttempts + 1;
+            return $this->paymentAttempts->getRecentFailures($quote) + 1;
         } catch (\Exception $e) {
             $this->logger->error("Failed to get payment attempts: " . $e->getMessage());
         }
@@ -282,11 +329,11 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         return $this->orderCollectionFactory->create(
             $customerId
         )->addFieldToSelect(
-                '*'
-            )->setOrder(
-                'created_at',
-                'desc'
-            )->getItems();
+            '*'
+        )->setOrder(
+            'created_at',
+            'desc'
+        )->getItems();
     }
 
     /**
@@ -315,12 +362,19 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $cc = [];
 
         $cc['cardType'] = $this->formatCcType($payment->getCcType());
-        $cc['cardNumber'] = $payment->getCcNumber();
         $cc['expirationDate'] = $this->buildCcExpDate($payment);
-        $cc['cardCode'] = $payment->getCcCid();
 
         if ($last4 = $this->decryptLast4($payment)) {
             $cc['last4'] = $last4;
+        }
+
+        // The full card number and CVV are never sent. When the payment method
+        // left the card number on the payment, send only the BIN, last 4 and
+        // brand derived from it; the CVV is never read.
+        foreach ($this->deriveCardDetails((string) $payment->getCcNumber()) as $key => $value) {
+            if (empty($cc[$key])) {
+                $cc[$key] = $value;
+            }
         }
 
         $paymentParams = [];
@@ -329,6 +383,50 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $paymentParams['method'] = str_replace('_', ' ', $payment->getMethod());
 
         return $paymentParams;
+    }
+
+    /**
+     * Derive BIN, last 4 and brand from a full card number, as the API did
+     *
+     * @param string $cardNumber
+     * @return array
+     */
+    private function deriveCardDetails(string $cardNumber): array
+    {
+        $digits = preg_replace('/\D/', '', $cardNumber);
+
+        // Only a full card number (12-19 digits) yields a BIN; masked values do not
+        if (strlen($digits) < 12 || strlen($digits) > 19) {
+            return [];
+        }
+
+        return [
+            'bin' => substr($digits, 0, 6),
+            'last4' => substr($digits, -4),
+            'cardType' => $this->cardTypeFromNumber($digits),
+        ];
+    }
+
+    /**
+     * Detect the card brand from the card number's prefix
+     *
+     * @param string $digits
+     * @return string
+     */
+    private function cardTypeFromNumber(string $digits): string
+    {
+        foreach (self::CARD_TYPE_PREFIXES as $cardType => $prefixes) {
+            foreach ($prefixes as $prefix) {
+                $start = substr($digits, 0, strlen($prefix[0]));
+                if (count($prefix) === 1 ? $start === $prefix[0]
+                    : (int) $start >= (int) $prefix[0] && (int) $start <= (int) $prefix[1]
+                ) {
+                    return $cardType;
+                }
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -501,7 +599,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
              * It's hard code for Japan locale.
              */
             $price = number_format(
-                (float) 
+                (float)
                 str_replace(',', $locale === self::JAPAN_LOCALE_CODE ? '' : '.', $value),
                 2,
                 '.',
@@ -630,6 +728,7 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
 
     /**
      * Extract the BIN, AVS and CVV codes from Cybersource
+     *
      * @param array $info
      * @return array
      */
@@ -654,4 +753,3 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         return $this->scrubEmptyValues($params);
     }
 }
-

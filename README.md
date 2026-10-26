@@ -5,7 +5,9 @@ Integrates NoFraud's post-payment-gateway API functionality into Magento 2.
 ## Sections
 
 * [ Getting Started ](#markdown-header-getting-started)
+    * [ Requirements ](#markdown-header-requirements)
     * [ Installation ](#markdown-header-installation)
+    * [ Upgrading to 2.0 ](#markdown-header-upgrading-to-20)
     * [ Configuration ](#markdown-header-configuration)
     * [ Troubleshooting ](#markdown-header-troubleshooting)
     * [ Known Issues ](#markdown-header-known-issues)
@@ -32,6 +34,15 @@ Integrates NoFraud's post-payment-gateway API functionality into Magento 2.
 
 ## Getting Started
 
+### Requirements
+----------------
+
+PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+, or 8.6+. These are the first releases patched for PHP2Shell (CVE-2026-109618, CVE-2026-109619); Composer refuses to install the module on older PHP versions.
+
+Read "Upgrading to 2.0" below before updating: updating with an older PHP serving the store causes HTTP 500 errors on every page.
+
+Distribution builds that backport the fix without changing the version string (for example Ubuntu's PHP 8.3.6) are refused. Once you have confirmed your build includes the fix, install with `composer require nofraud/connect --ignore-platform-req=php`. If your build reports a version below 8.2.35, also run `composer config platform-check false`; otherwise the next `composer dump-autoload` restores Composer's load-time PHP check and takes the store offline.
+
 ### Installation
 ----------------
 
@@ -45,7 +56,7 @@ php ~/current/bin/magento setup:upgrade
 
 From the COMMAND LINE using Composer:
 ```
-1. Update composer to require the "nofraud/connect" package with the command: $ composer require nofraud/connect dev-master
+1. Update composer to require the "nofraud/connect" package with the command: $ composer require nofraud/connect:^2.0
 
 2. To enable the module, run the command: $ bin/magento module:enable NoFraud_Connect
 
@@ -53,6 +64,25 @@ From the COMMAND LINE using Composer:
 
 4. If a production environment - re deploy the static content and run the di compiler
 ```
+
+### Upgrading to 2.0
+--------------------
+
+Version 2.0 raises the minimum PHP version (see "Requirements" above). If the PHP serving your store is older than 8.2.35 when you update, every page of the store, including the admin, returns HTTP 500.
+
+Before updating:
+
+1. Check the PHP version serving your store: the PHP-FPM or Apache version, not only `php -v` on the command line. Your hosting provider can confirm it.
+2. If you build or deploy from a different machine (CI, a Docker build, a deploy server), also check the PHP version on your production servers.
+3. Update a staging copy of the store first, and keep a copy of your `composer.json` and `composer.lock`.
+4. If you installed with `dev-master`, require a version instead so future major releases are not installed automatically: `composer require nofraud/connect:^2.0`.
+
+If the store returns HTTP 500 after updating, the error page or your web server's error log shows `Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.2.35"`. To recover, do one of the following:
+
+1. Upgrade the PHP serving the store to a patched version. The store recovers once PHP restarts; no Composer step is needed.
+2. Roll back the module with `composer require nofraud/connect:1.7.0`, then run `bin/magento setup:di:compile` and `bin/magento cache:flush` if the store runs in production mode. No database rollback is needed.
+3. Temporarily disable Composer's PHP check with `composer config platform-check false && composer dump-autoload -o`. The store comes back up, but it stays exposed to PHP2Shell until PHP is upgraded.
+4. If you deploy from a pipeline, redeploy your previous release.
 
 ### Configuration
 -----------------

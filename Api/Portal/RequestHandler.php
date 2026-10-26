@@ -2,8 +2,6 @@
 
 namespace NoFraud\Connect\Api\Portal;
 
-use org\bovigo\vfs\DirectoryIterationTestCase;
-
 class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandler
 {
     private const TRANSACTION_STATUS_ENDPOINT = 'status_by_invoice';
@@ -40,8 +38,8 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
      */
     protected function getTransactionStatusUrl($apiUrl, $orderId, $apiToken)
     {
-        $transactionStatusUrl = $apiUrl . self::TRANSACTION_STATUS_ENDPOINT . DIRECTORY_SEPARATOR . $apiToken;
-        return $transactionStatusUrl . $orderId;
+        // The API route is status_by_invoice/{token}/{invoice}
+        return $apiUrl . self::TRANSACTION_STATUS_ENDPOINT . '/' . $apiToken . '/' . $orderId;
     }
 
     /**

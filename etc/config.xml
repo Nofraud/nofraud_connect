@@ -13,7 +13,7 @@ xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
             <order_email_review>
                 <enabled>1</enabled>
                 <cron_expression>0 */6 * * *</cron_expression>
-                <recipient>hello@example.com</recipient>
+                <recipient></recipient>
                 <hours>72</hours>
                 <status>processing</status>
                 <email_template>nofraud_connect_order_email_review_email_template</email_template>
