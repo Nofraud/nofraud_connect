@@ -10,16 +10,19 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    # SEMANTIC_RELEASE lives in this environment, which only master can use
+    environment: release
     # Skip running release workflow on forks
     if: github.repository_owner == 'Nofraud'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3.7.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
           node-version: "lts/*"
-      - run: npm install -g semantic-release @semantic-release/github @semantic-release/git @semantic-release/changelog @iwavesmedia/semantic-release-composer
-      - run: npx semantic-release
+      # Versions and transitive deps are pinned in .github/release/package-lock.json
+      - run: npm ci --prefix .github/release --ignore-scripts
+      - run: ./.github/release/node_modules/.bin/semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE }}

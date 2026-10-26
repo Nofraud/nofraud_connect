@@ -3,3 +3,4 @@
 vendor/
 phpunit.phar
 .phpunit.result.cache
+.github/release/node_modules/
