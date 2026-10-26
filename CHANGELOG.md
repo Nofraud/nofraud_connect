@@ -1,3 +1,29 @@
+# [2.0.0](https://github.com/Nofraud/nofraud_connect/compare/v1.7.0...v2.0.0) (2026-10-26)
+
+
+* feat!: require PHP versions patched for PHP2Shell (PLATFORM-4372) ([381a47e](https://github.com/Nofraud/nofraud_connect/commit/381a47eaa1d26e7bcbf65685b777240e07cc1676))
+
+
+### Bug Fixes
+
+* Count cardAttempts within a 1-hour window instead of per-cart lifetime ([f2c83fb](https://github.com/Nofraud/nofraud_connect/commit/f2c83fb8930278335fc2569b3cd172c0e9a4e3e6))
+* **security:** escape API values, bind cron SQL, fix cancel sync (PLATFORM-4373) ([bd0efc3](https://github.com/Nofraud/nofraud_connect/commit/bd0efc30067ce7b32a5b8b0144cc3ab7b38dcef2))
+* **security:** remove public debug-log link, restrict log dirs (PLATFORM-4373) ([d0ccf61](https://github.com/Nofraud/nofraud_connect/commit/d0ccf61f956bc344f7eeaf5d3e0bd924b0aeb2b3))
+* **security:** stop sending full card number and CVV (PLATFORM-4373) ([5b5ecc4](https://github.com/Nofraud/nofraud_connect/commit/5b5ecc402f1feef3dda6a2bb0b71939124e9fbe1))
+* **security:** stop writing the API token to logs (PLATFORM-4373) ([03a273e](https://github.com/Nofraud/nofraud_connect/commit/03a273e4666561210dad66cf2a45df975c2a9c13))
+
+
+### BREAKING CHANGES
+
+* requires PHP 8.2.35+, 8.3.36+, 8.4.27+, 8.5.12+ or 8.6+.
+Before updating, make sure the PHP version serving your store (check the
+PHP-FPM or Apache version, not only `php -v`) is at least 8.2.35, 8.3.36,
+8.4.27 or 8.5.12. If you build or deploy from a different machine, check the
+PHP version on your production servers. Updating with an older PHP serving
+the store will cause HTTP 500 errors on every page.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 # [1.7.0](https://github.com/Nofraud/nofraud_connect/compare/v1.6.0...v1.7.0) (2025-03-19)
 
 
