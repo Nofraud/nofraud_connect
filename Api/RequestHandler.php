@@ -63,6 +63,29 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     ];
 
     /**
+     * Card brand by number prefix: single prefixes or [low, high] ranges, checked
+     * in order. Mirrors the API's card_type_from_number so the brand sent is the
+     * same one the API used to derive from the full card number.
+     *
+     * @var array
+     */
+    private const CARD_TYPE_PREFIXES = [
+        'american_express' => [['34'], ['37']],
+        'china_union_pay' => [['62'], ['88']],
+        'discover' => [['6011'], ['622126', '622925'], ['644', '649'], ['65']],
+        'jcb' => [['3528', '3589']],
+        'laser' => [['6304'], ['6706'], ['6771'], ['6709']],
+        'maestro' => [
+            ['5018'], ['5020'], ['5038'], ['5612'], ['5893'], ['6304'],
+            ['6759'], ['6761'], ['6762'], ['6763'], ['0604'],
+        ],
+        'dankort' => [['5019']],
+        'mastercard' => [['50', '55'], ['300', '305'], ['309'], ['36'], ['38', '39']],
+        'visa' => [['4']],
+        'visa_electron' => [['4026'], ['417500'], ['4405'], ['4508'], ['4844'], ['4913'], ['4917']],
+    ];
+
+    /**
      * Japan locale code
      */
     private const JAPAN_LOCALE_CODE = 'ja_JP';
@@ -339,12 +362,19 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $cc = [];
 
         $cc['cardType'] = $this->formatCcType($payment->getCcType());
-        $cc['cardNumber'] = $payment->getCcNumber();
         $cc['expirationDate'] = $this->buildCcExpDate($payment);
-        $cc['cardCode'] = $payment->getCcCid();
 
         if ($last4 = $this->decryptLast4($payment)) {
             $cc['last4'] = $last4;
+        }
+
+        // The full card number and CVV are never sent. When the payment method
+        // left the card number on the payment, send only the BIN, last 4 and
+        // brand derived from it; the CVV is never read.
+        foreach ($this->deriveCardDetails((string) $payment->getCcNumber()) as $key => $value) {
+            if (empty($cc[$key])) {
+                $cc[$key] = $value;
+            }
         }
 
         $paymentParams = [];
@@ -353,6 +383,50 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
         $paymentParams['method'] = str_replace('_', ' ', $payment->getMethod());
 
         return $paymentParams;
+    }
+
+    /**
+     * Derive BIN, last 4 and brand from a full card number, as the API did
+     *
+     * @param string $cardNumber
+     * @return array
+     */
+    private function deriveCardDetails(string $cardNumber): array
+    {
+        $digits = preg_replace('/\D/', '', $cardNumber);
+
+        // Only a full card number (12-19 digits) yields a BIN; masked values do not
+        if (strlen($digits) < 12 || strlen($digits) > 19) {
+            return [];
+        }
+
+        return [
+            'bin' => substr($digits, 0, 6),
+            'last4' => substr($digits, -4),
+            'cardType' => $this->cardTypeFromNumber($digits),
+        ];
+    }
+
+    /**
+     * Detect the card brand from the card number's prefix
+     *
+     * @param string $digits
+     * @return string
+     */
+    private function cardTypeFromNumber(string $digits): string
+    {
+        foreach (self::CARD_TYPE_PREFIXES as $cardType => $prefixes) {
+            foreach ($prefixes as $prefix) {
+                $start = substr($digits, 0, strlen($prefix[0]));
+                if (count($prefix) === 1 ? $start === $prefix[0]
+                    : (int) $start >= (int) $prefix[0] && (int) $start <= (int) $prefix[1]
+                ) {
+                    return $cardType;
+                }
+            }
+        }
+
+        return '';
     }
 
     /**
