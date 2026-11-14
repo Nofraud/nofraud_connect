@@ -248,12 +248,12 @@ class RequestHandler extends \NoFraud\Connect\Api\Request\Handler\AbstractHandle
     /**
      * Parse IP String
      *
-     * @param string $ipString
+     * @param string|null $ipString
      * @return string
      */
     private function parseIpString($ipString): string
     {
-        $ipString = str_replace(' ', '', $ipString);
+        $ipString = str_replace(' ', '', (string) $ipString);
         $ips = explode(',', $ipString);
         return $ips[0];
     }

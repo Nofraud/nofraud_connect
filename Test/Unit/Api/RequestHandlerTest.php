@@ -121,4 +121,39 @@ class RequestHandlerTest extends TestCase
             'unknown' => ['9999999999999999', ''],
         ];
     }
+
+    /**
+     * @dataProvider ipAddressProvider
+     */
+    public function testIpAddressIsParsedFromRemoteIpOrForwardedFor(
+        ?string $remoteIp,
+        ?string $forwardedFor,
+        string $expected
+    ): void {
+        $order = $this->createMock(Order::class);
+        $order->method('getRemoteIp')->willReturn($remoteIp);
+        $order->method('getXForwardedFor')->willReturn($forwardedFor);
+
+        $requestHandler = (new \ReflectionClass(RequestHandler::class))->newInstanceWithoutConstructor();
+        $getIpAddress = new \ReflectionMethod(RequestHandler::class, 'getIpAddress');
+
+        set_error_handler(static function (int $severity, string $message): never {
+            throw new \ErrorException($message, 0, $severity);
+        }, E_DEPRECATED);
+        try {
+            $this->assertSame($expected, $getIpAddress->invoke($requestHandler, $order));
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    public static function ipAddressProvider(): array
+    {
+        return [
+            'remote ip only' => ['203.0.113.7', null, '203.0.113.7'],
+            'forwarded for list wins' => ['10.0.0.1', '198.51.100.4, 10.0.0.1', '198.51.100.4'],
+            'null remote ip' => [null, null, ''],
+            'empty remote ip' => ['', '', ''],
+        ];
+    }
 }
